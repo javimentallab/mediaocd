@@ -1,5 +1,5 @@
 // Throwaway generator: bundles 184 patch_*.js files into 10 mega-patches.
-// Run from ./mediatracker-build/.
+// Run from ./mediatoc/.
 // After successful rebuild + smoke test, delete this file along with the originals.
 
 const fs = require('fs');
