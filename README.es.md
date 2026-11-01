@@ -150,6 +150,7 @@ e instala las dependencias desde `app/package-lock.json`.
 ├── docker-compose.example.yml
 ├── release.sh
 ├── NOTICE                  # componentes de terceros y sus licencias
+├── CHANGELOG.md
 └── .github/workflows/
     ├── build.yml           # construye la imagen, la arranca y comprueba que responde
     └── trivy-scan.yml      # vulnerabilidades, secretos y fallos de configuración en la imagen y el repo, en push/PR/semanal + SARIF a la pestaña Security
@@ -169,8 +170,9 @@ e instala las dependencias desde `app/package-lock.json`.
 ./release.sh 1.2.0
 ```
 
+- Antes, escribe la entrada en [`CHANGELOG.md`](CHANGELOG.md) y haz su commit.
 - Se detiene si hay cambios sin commitear, si la rama no es `main`, si la etiqueta ya existe o si la versión no sigue semver.
-- Sube la versión en `app/build/config.js` y `app/package.json`.
+- Sube la versión en `app/build/config.js`, `app/package.json` y `app/package-lock.json`.
 - Hace el commit, crea la etiqueta `v1.2.0`, sube las dos cosas y prepara un borrador de release en GitHub con los commits desde la etiqueta anterior, para que lo edites antes de publicarlo.
 
 ## Licencia

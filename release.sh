@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Usage: ./release.sh <new-version>   (e.g. ./release.sh 1.1.4)
 #
-# Cuts a new MediaOCD release: bumps the version in app/build/config.js and
-# app/package.json, commits,
+# Cuts a new MediaOCD release: bumps the version in app/build/config.js,
+# app/package.json and app/package-lock.json, commits,
 # creates an annotated tag, pushes both, and opens a draft GitHub release
 # pre-filled with `git log --oneline` since the previous tag for you to edit.
 #
@@ -48,19 +48,19 @@ if [[ -n "$PREV_TAG" ]]; then
   PREV_VERSION="${PREV_TAG#v}"
 fi
 
-# Bump the version: app/build/config.js (`static version = 'X.Y.Z';`, shown in the app)
-# and app/package.json.
+# Bump the version: app/build/config.js (`static version = 'X.Y.Z';`, shown in the app),
+# app/package.json and the two matching fields of app/package-lock.json.
 CONFIG_FILE="app/build/config.js"
 if ! grep -q "static version = '" "$CONFIG_FILE"; then
   echo "error: version line not found in $CONFIG_FILE" >&2
   exit 1
 fi
 sed -i "s/static version = '[^']*';/static version = '$NEW_VERSION';/" "$CONFIG_FILE"
-node -e "const f='app/package.json',fs=require('fs'),j=JSON.parse(fs.readFileSync(f,'utf8'));j.version='$NEW_VERSION';fs.writeFileSync(f,JSON.stringify(j,null,2)+'\n')"
+node -e "const fs=require('fs');for(const f of ['app/package.json','app/package-lock.json']){const j=JSON.parse(fs.readFileSync(f,'utf8'));j.version='$NEW_VERSION';if(j.packages)j.packages[''].version='$NEW_VERSION';fs.writeFileSync(f,JSON.stringify(j,null,2)+'\n')}"
 echo "bumped version → $NEW_VERSION"
 
 # Commit + tag + push
-git add "$CONFIG_FILE" app/package.json
+git add "$CONFIG_FILE" app/package.json app/package-lock.json
 git commit -m "v$NEW_VERSION: bump version"
 git tag -a "v$NEW_VERSION" -m "MediaOCD v$NEW_VERSION"
 git push origin main "v$NEW_VERSION"

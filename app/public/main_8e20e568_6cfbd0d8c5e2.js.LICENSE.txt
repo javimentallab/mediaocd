@@ -8,7 +8,6 @@ object-assign
 
 /**
  * @title MediaOCD
- * @version 0.2.11
  * @license MIT (https://opensource.org/licenses/MIT)
  */
 
