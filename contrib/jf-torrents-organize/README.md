@@ -71,7 +71,7 @@ All knobs are environment variables. Defaults match a typical compose:
 
 | Variable                 | Default                                       | Purpose                                                 |
 | ------------------------ | --------------------------------------------- | ------------------------------------------------------- |
-| `TORRENTS_PATH_HOST`     | `/srv/qbit/downloads`   | Source dir on the host (where the script lists folders) |
+| `TORRENTS_PATH_HOST`     | `/srv/qbit/downloads`                         | Source dir on the host (where the script lists folders) |
 | `TORRENTS_PATH_IN_JF`    | `/data/torrents`                              | Same dir as seen from inside the JF container           |
 | `MOVIES_PATH_IN_JF`      | `/data/movies/peliculas`                      | Movie hardlinks destination (JF view)                   |
 | `SERIES_PATH_IN_JF`      | `/data/movies/series`                         | Series hardlinks destination (JF view)                  |
