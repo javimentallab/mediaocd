@@ -112,6 +112,10 @@ already configured Jellyfin in MediaOCD, no extra credentials needed.
 See [`contrib/jf-torrents-organize/README.md`](contrib/jf-torrents-organize/README.md)
 for layout requirements, env vars and footguns.
 
+## Companion: `contrib/mcp-server`
+
+Optional [MCP](https://modelcontextprotocol.io) server that lets an AI assistant search your library, mark items as seen and manage the watchlist and ratings: see [`contrib/mcp-server/README.md`](contrib/mcp-server/README.md).
+
 ## Host-side backups
 
 The image doesn't ship a cron — recommended pattern:
@@ -138,7 +142,7 @@ and installs the dependencies from `app/package-lock.json`.
 ├── docker/entrypoint.sh    # PUID/PGID, auto-restore of data.db from the latest backup, start
 ├── tools/rehash-web.js     # run after editing app/public (renames the bundle, bumps the service worker)
 ├── docs/                   # logo
-├── contrib/                # jf-torrents-organize
+├── contrib/                # jf-torrents-organize, mcp-server
 ├── Dockerfile
 ├── docker-compose.example.yml
 ├── release.sh

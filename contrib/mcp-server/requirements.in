@@ -1,0 +1,5 @@
+# Direct dependencies. requirements.txt pins the full tree; update both together.
+mcp==2.3.0
+httpx2>=2.10,<3
+uvicorn>=0.31.1
+pydantic>=2.12
