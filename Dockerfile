@@ -28,8 +28,7 @@ RUN apk update && apk upgrade --no-cache --available && rm -rf /var/cache/apk/*
 # To change a dependency: edit app/package.json, build, then
 #   docker cp mediaocd:/app/package-lock.json app/
 COPY app/package.json app/package-lock.json /app/
-RUN cd /app && \
-    apk add --no-cache --virtual .build-deps python3 make g++ && \
+RUN apk add --no-cache --virtual .build-deps python3 make g++ && \
     npm install --legacy-peer-deps --no-audit --no-fund 2>&1 | tail -25 && \
     apk del .build-deps && \
     rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
@@ -39,11 +38,10 @@ RUN cd /app && \
 # express's nested path-to-regexp forced to 0.1.13 (CVE-2026-4867, ReDoS): npm overrides
 # don't reach it, so the 0.1.13 tarball replaces the nested copy, and express's own
 # package.json declares it so audits match what is on disk.
-RUN cd /tmp && \
-    wget -q https://registry.npmjs.org/path-to-regexp/-/path-to-regexp-0.1.13.tgz && \
-    mkdir -p ptr && tar xzf path-to-regexp-0.1.13.tgz -C ptr && \
+RUN wget -q -O /tmp/path-to-regexp-0.1.13.tgz https://registry.npmjs.org/path-to-regexp/-/path-to-regexp-0.1.13.tgz && \
+    mkdir -p /tmp/ptr && tar xzf /tmp/path-to-regexp-0.1.13.tgz -C /tmp/ptr && \
     rm -rf /app/node_modules/express/node_modules/path-to-regexp && \
-    mv ptr/package /app/node_modules/express/node_modules/path-to-regexp && \
+    mv /tmp/ptr/package /app/node_modules/express/node_modules/path-to-regexp && \
     rm -rf /tmp/ptr /tmp/path-to-regexp-0.1.13.tgz && \
     node -e " \
       const fs = require('fs'), p = '/app/node_modules/express/package.json'; \
@@ -55,7 +53,7 @@ RUN cd /tmp && \
 
 # Smoke test: LOAD the packages most likely to break (native sharp/libvips on musl,
 # better-sqlite3, argon2, nanoid that must stay CJS), not just read their package.json.
-RUN cd /app && for p in axios fast-xml-parser form-data lodash ajv nanoid sharp proxy-addr; do \
+RUN for p in axios fast-xml-parser form-data lodash ajv nanoid sharp proxy-addr; do \
       echo "$p: $(node -p "require('$p/package.json').version")"; \
     done && node -e " \
       const sharp = require('sharp'); \
@@ -78,7 +76,8 @@ RUN cd /app && for p in axios fast-xml-parser form-data lodash ajv nanoid sharp 
 COPY docker /docker
 COPY app/build /app/build
 COPY app/public /app/public
-RUN cd /app/public && node -e " \
+WORKDIR /app/public
+RUN node -e " \
       const fs = require('fs'), zlib = require('zlib'); \
       for (const f of fs.readdirSync('.').filter(f => /\.(js|css)$/.test(f))) { \
         const d = fs.readFileSync(f); \
@@ -89,6 +88,7 @@ RUN cd /app/public && node -e " \
       new Function(fs.readFileSync(fs.readdirSync('.').find(f => /^main_.*\.js$/.test(f)), 'utf8')); \
       console.log('web client parses OK'); \
     "
+WORKDIR /app
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
     CMD wget -q -O /dev/null "http://$(hostname):7481/api/configuration" || exit 1
