@@ -2,6 +2,8 @@
 
 <h1 align="center">MediaOCD</h1>
 
+<p align="center"><b>English</b> | <a href="README.es.md">Español</a></p>
+
 <p align="center">
 <a href="https://github.com/javimentallab/mediaocd/actions/workflows/build.yml"><img src="https://github.com/javimentallab/mediaocd/actions/workflows/build.yml/badge.svg" alt="build"></a>
 <a href="https://github.com/javimentallab/mediaocd/actions/workflows/trivy-scan.yml"><img src="https://github.com/javimentallab/mediaocd/actions/workflows/trivy-scan.yml/badge.svg" alt="trivy-scan"></a>
@@ -34,6 +36,7 @@ A media tracker built for **completionists**, Spanish-first and translated into 
 - **External scores on the details page**: FilmAffinity rating for movies and TV shows, Metacritic Metascore for games, shown next to the IMDb/TMDB/IGDB logos and cached server-side.
 - **Duplicate detection** and merge tooling that doesn't lose seen / ratings / lists.
 - **Full backup / restore** including auto-restore on missing data.db, plus JSON and Letterboxd CSV exports.
+- **Works with AI assistants (MCP)**: the optional server in [`contrib/mcp-server`](contrib/mcp-server/README.md) lets an assistant search your library, mark items as seen and manage the watchlist and ratings.
 - **16 interface languages**: English, Spanish, Portuguese, French, German, Italian, Dutch, Polish, Russian, Ukrainian, Danish, Chinese, Japanese, Korean, Thai and Hindi. It follows the browser's language; *Settings → Configuration → UI language* forces one.
 
 Designed to live in your own infrastructure next to Jellyfin, qBittorrent, Home Assistant and whatever else.
@@ -141,14 +144,15 @@ and installs the dependencies from `app/package-lock.json`.
 │   └── package-lock.json
 ├── docker/entrypoint.sh    # PUID/PGID, auto-restore of data.db from the latest backup, start
 ├── tools/rehash-web.js     # run after editing app/public (renames the bundle, bumps the service worker)
-├── docs/                   # logo
+├── docs/                   # logo and screenshots
 ├── contrib/                # jf-torrents-organize, mcp-server
 ├── Dockerfile
 ├── docker-compose.example.yml
 ├── release.sh
+├── NOTICE                  # third-party components and their licenses
 └── .github/workflows/
     ├── build.yml           # builds the image, starts it and checks that it answers
-    └── trivy-scan.yml      # CVE scan on push/PR/weekly + SARIF to the Security tab
+    └── trivy-scan.yml      # vulnerabilities, secrets and misconfigurations in the image and the repo, on push/PR/weekly + SARIF to the Security tab
 ```
 
 - **Server changes**: edit `app/build/**`, rebuild the image (`docker compose up -d --build mediaocd`).
@@ -171,4 +175,4 @@ and installs the dependencies from `app/package-lock.json`.
 
 ## License
 
-MIT — see [`LICENSE`](LICENSE).
+MIT — see [`LICENSE`](LICENSE). Third-party components and their licenses are listed in [`NOTICE`](NOTICE).
