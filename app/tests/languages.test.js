@@ -66,7 +66,7 @@ test('the placeholders of every text match those of English', () => {
   assert.deepStrictEqual(wrongPlaceholders().filter((entry) => entry !== GERMAN_TAG), []);
 });
 
-test('the German text of a search closes its tag', { todo: 'BUG: it has <0>...<0> instead of <0>...</0>' }, () => {
+test('the German text of a search closes its tag', () => {
   assert.ok(!wrongPlaceholders().includes(GERMAN_TAG));
 });
 

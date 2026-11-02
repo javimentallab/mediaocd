@@ -39,6 +39,9 @@ First release under the name MediaOCD (formerly MediaTOC), now a standalone proj
 
 ### Fixed
 
+- **Invisible buttons in the light theme**: colour classes missing from the compiled CSS left white text on a white background on the TMDB key's Save button, the download buttons in Settings → Backup and the refresh button on the Downloaded page, among others. In the dark theme the same gap made descriptions hard to read.
+- **Settings → Backup** described a nightly automatic backup that doesn't come with the app. It now says so and points to "Host-side backups" in the README.
+- **German search results**: the text for a single result had a broken tag.
 - **Phone layout**: the backup table stacks its rows, long log lines wrap, and the TMDB key form and the links row of the details page no longer run off the screen.
 - **Example compose file**: with the optional variables commented out it failed validation, so `docker compose build` stopped before building. What the install steps leave in the repository folder is now ignored by git.
 - **Portuguese, French and Danish**: many texts were still in English, and the tooltip of the rating stars was in Spanish in every language.
