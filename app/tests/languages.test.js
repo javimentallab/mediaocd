@@ -8,6 +8,7 @@ const { test } = require('node:test');
 const assert = require('node:assert');
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
 const { bundleSource, languageSetup } = require('./helpers/bundle');
 
 const LANGUAGES = ['da', 'de', 'en', 'es', 'fr', 'hi', 'it', 'ja', 'ko', 'nl', 'pl', 'pt', 'ru', 'th', 'uk', 'zh'];
@@ -117,7 +118,7 @@ const FIXED_IN_SPANISH = [
   '¿Desvincular tu cuenta de YouTube? Los canales ya añadidos se quedan; solo se borra el token de acceso.',
   'youtube.com/@canal o UC...', 'Consultando IGDB...', 'Total: ', ' · actualizados: ', ' · fallidos: ',
   'Importados desde Jellyfin: ', ' items · nuevos: ', 'Jugando', ' juegos) ', ' jugando', 'Duraciones actualizadas: ', ' episodios',
-  'Cargar duraciones desde TMDB', 'Error: ',
+  'Cargar duraciones desde TMDB', 'Error: ', 'uso: ',
 ];
 
 function bundleCode() {
@@ -134,10 +135,10 @@ function asLiterals(text) {
   return [plain, escaped, `'${text}'`, `\`${text}\``];
 }
 
-// Some keys are written as the Spanish was ("Total: "): those count as translated, not as fixed.
+// Some keys are written as the literal was ("Total: "): those count as translated, not as fixed.
 function isFixed(code, literal) {
   for (let i = code.indexOf(literal); i >= 0; i = code.indexOf(literal, i + 1)) {
-    if (code.slice(Math.max(0, i - 5), i) !== 'xo._(') return true;
+    if (code.slice(Math.max(0, i - 5), i) !== 'xo._(' && code.slice(Math.max(0, i - 3), i) !== 'id:') return true;
   }
   return false;
 }
@@ -215,6 +216,50 @@ test('the restore screen warns that an invalid copy is set aside', () => {
   for (const language of LANGUAGES) {
     assert.ok(catalogues[language]['Restore invalid desc'].includes('data.db.uploaded.rejected-*'), language);
   }
+});
+
+// The same for texts fixed in English. What reads the same in a language is decided in its
+// catalogue ("URL", or "API key" in Spanish), not left out of it. Proper names, the Audible
+// marketplaces, which go in their own language, and the log console stay as they are.
+const FIXED_IN_ENGLISH = [
+  'Load more', 'Links', 'API key', 'Loading...', 'tbd', 'How Long To Beat (IGDB):', 'media tracker for the obsessively organised',
+  'Chinese (中文)', 'Danish (Dansk)', 'Dutch (Nederlands)', 'French (Français)', 'German (Deutsch)', 'Hindi (हिन्दी)', 'Italian (Italiano)',
+  'Japanese (日本語)', 'Korean (한국어)', 'Polish (Polski)', 'Portuguese (Português)', 'Russian (Русский)', 'Spanish (Español)', 'Thai (ไทย)',
+  'Ukrainian (Українська)',
+];
+// As pieces of code, because "h", "URL" or "Close" on their own are also other things.
+const FIXED_PIECES = [
+  '}},"Close")', 'placeholder:"URL"', '"span",null,"h"', '"span",null,"min"', '+"h "+', '+"min"', '"min ",', '"h ",', '+" h"', 'return "0m"', '+m+"m"',
+  '"S"+String(', '," S")', '{value:"en"},"English"', '{value:"da"},"Danish"', '{value:"de"},"German"', '{value:"es"},"Spanish"',
+  '{value:"fr"},"French"', '{value:"ko"},"Korean"', '{value:"pt"},"Portuguese"',
+];
+
+test('the texts that used to be fixed in English come from the catalogues', () => {
+  const code = bundleCode();
+  assert.deepStrictEqual(FIXED_IN_ENGLISH.filter((text) => asLiterals(text).some((literal) => isFixed(code, literal))), []);
+  assert.deepStrictEqual(FIXED_PIECES.filter((piece) => code.includes(piece)), []);
+});
+
+test('what stays the same in a language is a decision of its catalogue', () => {
+  assert.strictEqual(catalogues.es['API key'], 'API key');
+  assert.strictEqual(catalogues.ru['API key'], 'API-ключ');
+  assert.strictEqual(catalogues.de.Links, 'Links');
+  assert.strictEqual(catalogues.es.Links, 'Enlaces');
+  assert.strictEqual(catalogues.ru.Links, 'Ссылки');
+  assert.strictEqual(catalogues.es.URL, 'URL');
+  assert.strictEqual(catalogues.zh.URL, '网址');
+  assert.deepStrictEqual(['h', 'min', 'm'].map((unit) => catalogues.es[unit]), ['h', 'min', 'm']);
+  assert.deepStrictEqual(['h', 'min'].map((unit) => catalogues.ru[unit]), ['ч', 'мин']);
+  assert.strictEqual(catalogues.es['use: '], 'uso: ');
+});
+
+test('the names of languages follow the interface, and an unknown code keeps its name', () => {
+  const helper = bundleCode().match(/_lngName=(\(function\(\)\{.*?\}\}\)\(\))/);
+  assert.ok(helper, 'the bundle names languages with Intl.DisplayNames');
+  const nameIn = (locale) => vm.runInNewContext(`var xo={locale:${JSON.stringify(locale)}};${helper[1]}`);
+  assert.strictEqual(nameIn('ru')('zh', 'Chinese'), 'Китайский');
+  assert.strictEqual(nameIn('es')('de', 'German'), 'Alemán');
+  assert.strictEqual(nameIn('en')('zz', 'Fallback'), 'Fallback');
 });
 
 test('the language follows the browser', () => {
