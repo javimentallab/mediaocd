@@ -39,6 +39,7 @@ First release under the name MediaOCD (formerly MediaTOC), now a standalone proj
 
 ### Fixed
 
+- **Button contrast and spacing**: the Export JSON, Letterboxd CSV, restore and merge buttons now reach at least 4.5:1 in both themes, and icons, chips and buttons no longer touch, because the `gap-*` classes were missing from the compiled CSS.
 - **Invisible buttons in the light theme**: colour classes missing from the compiled CSS left white text on a white background on the TMDB key's Save button, the download buttons in Settings → Backup and the refresh button on the Downloaded page, among others. In the dark theme the same gap made descriptions hard to read.
 - **Settings → Backup** described a nightly automatic backup that doesn't come with the app. It now says so and points to "Host-side backups" in the README.
 - **German search results**: the text for a single result had a broken tag.
