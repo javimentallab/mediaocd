@@ -6,14 +6,14 @@
 
 <p align="center">
 <a href="https://github.com/javimentallab/mediaocd/actions/workflows/build.yml"><img src="https://github.com/javimentallab/mediaocd/actions/workflows/build.yml/badge.svg" alt="build"></a>
-<a href="https://github.com/javimentallab/mediaocd/actions/workflows/trivy-scan.yml"><img src="https://github.com/javimentallab/mediaocd/actions/workflows/trivy-scan.yml/badge.svg" alt="trivy-scan"></a>
+<a href="https://github.com/javimentallab/mediaocd/actions/workflows/trivy.yml"><img src="https://github.com/javimentallab/mediaocd/actions/workflows/trivy.yml/badge.svg" alt="trivy"></a>
 <a href="https://github.com/javimentallab/mediaocd/releases/latest"><img src="https://img.shields.io/github/v/release/javimentallab/mediaocd" alt="release"></a>
 <a href="./LICENSE"><img src="https://img.shields.io/github/license/javimentallab/mediaocd" alt="license"></a>
 </p>
 
 > *Un gestor multimedia para obsesivos del orden: de los que quieren saber cuál de las 14 producciones de «La casa de Bernarda Alba» vieron en realidad.*
 
-Gestor autoalojado de todo lo que ves, lees, juegas, escuchas y a lo que asistes (películas, series, videojuegos, libros, audiolibros, teatro y vídeos de YouTube) con el nivel de detalle que los demás gestores no se molestan en tener.
+Gestor autoalojado de todo lo que ves, lees, juegas, escuchas y a lo que asistes (películas, series, videojuegos, libros, audiolibros, teatro y vídeos de YouTube) con el nivel de detalle que los demás gestores no se molestan en tener. Un servidor MCP opcional permite a los asistentes de IA trabajar con tu biblioteca.
 
 <p align="center">
   <img src="docs/screenshot-details.png" width="49%" alt="Ficha de una serie">
@@ -83,7 +83,7 @@ Para ponerlo detrás de tu propio dominio, consulta [`SETUP_DOMAIN.md`](SETUP_DO
 | `PUT` | `/api/audio-progress` | Progreso de escucha |
 | `PUT` | `/api/episode-progress` | Progreso por capítulo |
 | `POST` | `/api/episodes/fetch-runtimes` | Actualiza la duración de los capítulos (TMDB) |
-| `GET` | `/api/hltb` | Datos de HowLongToBeat de un juego |
+| `GET` | `/api/hltb` | Tiempo para terminar un juego, según IGDB (`?mediaItemId=`) |
 | `GET` | `/api/filmaffinity` | Nota de FilmAffinity de una película o serie (`?mediaItemId=`) |
 | `GET` | `/api/metacritic` | Metascore de Metacritic de un juego (`?mediaItemId=`) |
 | `GET` `/PUT` | `/api/tmdb/key` | Clave de API de TMDB gestionada desde la interfaz (admin) |
@@ -121,14 +121,15 @@ Servidor [MCP](https://modelcontextprotocol.io) opcional con el que un asistente
 
 ## Copias de seguridad desde el host
 
-La imagen no incluye cron. El patrón recomendado:
+La imagen no incluye cron: programa las copias desde el host. `GET /api/backup` descarga la base de datos, con un token de aplicación de un usuario administrador:
 
-```cron
-0 3 * * * /ruta/a/backup-mediaocd.sh >> /ruta/a/backup.log 2>&1
-30 3 * * * bash /ruta/a/verify-backup.sh --quiet >> /ruta/a/verify.log 2>&1
+```sh
+curl -fsS -H "Authorization: Bearer TU_TOKEN" -o mediaocd-backup.db http://localhost:7481/api/backup
 ```
 
-Los dos scripts usan `docker exec mediaocd` y rotan guardando 7 diarias, 4 semanales y 3 mensuales. Lo mejor es tenerlos fuera de la imagen, junto al volumen de datos.
+El fichero es `data.db` tal como está en el disco, y la base de datos funciona en modo WAL, así que puede que aún no lleve los últimos cambios.
+
+Si `/storage/data.db` no existe cuando arranca el contenedor, restaura sola la copia `/storage/backups/data-*.db` más reciente: con el compose de ejemplo, eso es `./mediaocd-data/backups/`. Guarda otra copia lejos de esa carpeta.
 
 ## Desarrollo
 
@@ -140,6 +141,7 @@ e instala las dependencias desde `app/package-lock.json`.
 ├── app/
 │   ├── build/              # servidor (Node, Express, SQLite con knex): se editan directamente los .js
 │   ├── public/             # cliente web: index.html, el bundle main_*.js, CSS, service worker, iconos
+│   ├── tests/              # tests de la app: node --test app/tests/*.test.js
 │   ├── package.json        # dependencias; app/package-lock.json fija el árbol exacto
 │   └── package-lock.json
 ├── docker/entrypoint.sh    # PUID/PGID, restauración automática de data.db desde el último backup, arranque
@@ -151,9 +153,13 @@ e instala las dependencias desde `app/package-lock.json`.
 ├── release.sh
 ├── NOTICE                  # componentes de terceros y sus licencias
 ├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── SECURITY.md
 └── .github/workflows/
-    ├── build.yml           # construye la imagen, la arranca y comprueba que responde
-    └── trivy-scan.yml      # vulnerabilidades, secretos y fallos de configuración en la imagen y el repo, en push/PR/semanal + SARIF a la pestaña Security
+    ├── build.yml           # comprueba el compose de ejemplo, construye la imagen, la arranca y comprueba que responde
+    ├── tests.yml           # tests de la app y del servidor MCP
+    ├── codeql.yml          # análisis del código, en push/PR/semanal
+    └── trivy.yml           # vulnerabilidades, secretos y fallos de configuración en la imagen y el repo, en push/PR/semanal + SARIF a la pestaña Security
 ```
 
 - **Cambios en el servidor**: edita `app/build/**` y reconstruye la imagen (`docker compose up -d --build mediaocd`).

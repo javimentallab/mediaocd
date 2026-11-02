@@ -88,8 +88,8 @@ Material Icons - Apache-2.0
 Images that are NOT under MediaOCD's MIT license:
 
 app/public/logo/* - logos of Audible, FilmAffinity, Goodreads, IGDB, IMDb, Metacritic,
-  Open Library and TMDB. They are trademarks of their owners, used only to identify where
-  a piece of data comes from and to link to it.
+  Open Library, TMDB, Trakt and TVmaze. They are trademarks of their owners, used only to
+  identify where a piece of data comes from and to link to it.
 
 app/public/image/goodreads_import.png - screenshot of the Goodreads website, used in the
   help text of the Goodreads import.

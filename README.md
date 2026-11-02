@@ -6,14 +6,14 @@
 
 <p align="center">
 <a href="https://github.com/javimentallab/mediaocd/actions/workflows/build.yml"><img src="https://github.com/javimentallab/mediaocd/actions/workflows/build.yml/badge.svg" alt="build"></a>
-<a href="https://github.com/javimentallab/mediaocd/actions/workflows/trivy-scan.yml"><img src="https://github.com/javimentallab/mediaocd/actions/workflows/trivy-scan.yml/badge.svg" alt="trivy-scan"></a>
+<a href="https://github.com/javimentallab/mediaocd/actions/workflows/trivy.yml"><img src="https://github.com/javimentallab/mediaocd/actions/workflows/trivy.yml/badge.svg" alt="trivy"></a>
 <a href="https://github.com/javimentallab/mediaocd/releases/latest"><img src="https://img.shields.io/github/v/release/javimentallab/mediaocd" alt="release"></a>
 <a href="./LICENSE"><img src="https://img.shields.io/github/license/javimentallab/mediaocd" alt="license"></a>
 </p>
 
 > *A media tracker for the obsessively organised — the kind of person who cares which one of the 14 productions of "La casa de Bernarda Alba" they actually saw.*
 
-Self-hosted tracker for everything you watch, read, play, listen to and attend — movies, TV, video games, books, audiobooks, theatre and YouTube videos — with the level of detail that the rest of the trackers don't bother with.
+Self-hosted tracker for everything you watch, read, play, listen to and attend — movies, TV, video games, books, audiobooks, theatre and YouTube videos — with the level of detail that the rest of the trackers don't bother with. An optional MCP server lets AI assistants work with your library.
 
 <p align="center">
   <img src="docs/screenshot-details.png" width="49%" alt="Details page of a show">
@@ -83,7 +83,7 @@ To put it behind your own domain, see [`SETUP_DOMAIN.md`](SETUP_DOMAIN.md).
 | `PUT` | `/api/audio-progress` | Listening progress |
 | `PUT` | `/api/episode-progress` | Per-episode progress |
 | `POST` | `/api/episodes/fetch-runtimes` | Refresh episode runtimes (TMDB) |
-| `GET` | `/api/hltb` | HowLongToBeat data for a game |
+| `GET` | `/api/hltb` | Time to beat of a game, from IGDB (`?mediaItemId=`) |
 | `GET` | `/api/filmaffinity` | FilmAffinity rating for a movie/TV item (`?mediaItemId=`) |
 | `GET` | `/api/metacritic` | Metacritic Metascore for a game (`?mediaItemId=`) |
 | `GET` `/PUT` | `/api/tmdb/key` | TMDB API key managed via UI (admin) |
@@ -121,14 +121,15 @@ Optional [MCP](https://modelcontextprotocol.io) server that lets an AI assistant
 
 ## Host-side backups
 
-The image doesn't ship a cron — recommended pattern:
+The image doesn't ship a cron: schedule the copies from the host. `GET /api/backup` downloads the database, with an application token of an admin user:
 
-```cron
-0 3 * * * /path/to/backup-mediaocd.sh >> /path/to/backup.log 2>&1
-30 3 * * * bash /path/to/verify-backup.sh --quiet >> /path/to/verify.log 2>&1
+```sh
+curl -fsS -H "Authorization: Bearer YOUR_TOKEN" -o mediaocd-backup.db http://localhost:7481/api/backup
 ```
 
-Both scripts use `docker exec mediaocd` and rotate keeping 7 daily / 4 weekly / 3 monthly. Best to keep them outside the image, next to the data volume.
+The file is `data.db` as it is on disk, and the database runs in WAL mode, so the latest changes may not be in it yet.
+
+If `/storage/data.db` is missing when the container starts, it restores the newest `/storage/backups/data-*.db` by itself: with the example compose file, that is `./mediaocd-data/backups/`. Keep another copy away from that folder.
 
 ## Development
 
@@ -140,6 +141,7 @@ and installs the dependencies from `app/package-lock.json`.
 ├── app/
 │   ├── build/              # server (Node, Express, SQLite via knex): edit the .js files directly
 │   ├── public/             # web client: index.html, the bundle main_*.js, CSS, service worker, icons
+│   ├── tests/              # tests of the app: node --test app/tests/*.test.js
 │   ├── package.json        # dependencies; app/package-lock.json pins the exact tree
 │   └── package-lock.json
 ├── docker/entrypoint.sh    # PUID/PGID, auto-restore of data.db from the latest backup, start
@@ -151,9 +153,13 @@ and installs the dependencies from `app/package-lock.json`.
 ├── release.sh
 ├── NOTICE                  # third-party components and their licenses
 ├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── SECURITY.md
 └── .github/workflows/
-    ├── build.yml           # builds the image, starts it and checks that it answers
-    └── trivy-scan.yml      # vulnerabilities, secrets and misconfigurations in the image and the repo, on push/PR/weekly + SARIF to the Security tab
+    ├── build.yml           # checks the example compose file, builds the image, starts it and checks that it answers
+    ├── tests.yml           # tests of the app and of the MCP server
+    ├── codeql.yml          # analysis of the code, on push/PR/weekly
+    └── trivy.yml           # vulnerabilities, secrets and misconfigurations in the image and the repo, on push/PR/weekly + SARIF to the Security tab
 ```
 
 - **Server changes**: edit `app/build/**`, rebuild the image (`docker compose up -d --build mediaocd`).

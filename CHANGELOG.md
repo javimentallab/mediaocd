@@ -25,7 +25,7 @@ First release under the name MediaOCD (formerly MediaTOC), now a standalone proj
 - **Rate anything**: the rating star now shows on items with no release date or a future one.
 - **Optional MCP server** in `contrib/mcp-server`, so an AI assistant can search your library, mark items as seen and manage the watchlist and ratings.
 - **Optional `contrib/jf-torrents-organize`**: hardlinks qBittorrent downloads into a layout Jellyfin indexes correctly, with season-pack support.
-- `README.es.md`, `NOTICE` and this changelog.
+- `README.es.md`, `NOTICE`, `SECURITY.md`, `CONTRIBUTING.md` and this changelog.
 
 ### Changed
 
@@ -39,6 +39,8 @@ First release under the name MediaOCD (formerly MediaTOC), now a standalone proj
 ### Fixed
 
 - **Phone layout**: the backup table stacks its rows, long log lines wrap, and the TMDB key form and the links row of the details page no longer run off the screen.
+- **Example compose file**: with the optional variables commented out it failed validation, so `docker compose build` stopped before building. What the install steps leave in the repository folder is now ignored by git.
+- **Portuguese, French and Danish**: many texts were still in English, and the tooltip of the rating stars was in Spanish in every language.
 - **Letterboxd export**: ratings were halved, so 5 stars came out as 2.5. They are now exported as stored.
 - Searches with many results failing with "database is locked".
 - Returning shows flagged as completed after catching up on the aired episodes.
@@ -54,9 +56,9 @@ First release under the name MediaOCD (formerly MediaTOC), now a standalone proj
 
 ### Security
 
-- Node 20 (end of life) replaced by Node 22.23.4 on Alpine 3.23, pinned by digest.
+- Node 20 (end of life) replaced by Node 22.23.4 on Alpine 3.23, pinned by digest, which brings the fixes of the October 2026 Node security release: CVE-2026-111497 (Brotli decoder RCE), CVE-2026-105483 and CVE-2026-106069 (TLS hostname bypasses).
 - Dependencies: nanoid 3.3.20 (CVE-2026-67213, CVE-2026-67214, CVE-2026-73086), sharp 0.35.5 (GHSA-f88m-g3jw-g9cj), proxy-addr 2.0.8 (CVE-2026-90711), body-parser 1.20.9 (CVE-2026-111181), follow-redirects 1.16.2 (CVE-2026-116689).
 - `npm`, `npx` and `corepack` removed from the final image, as they carried their own HIGH advisories.
-- CI: Trivy scans the image and the repository for vulnerabilities, secrets and misconfigurations on every push and every week, with `trivy-action` pinned by commit. A second workflow builds the image, starts it and checks that it answers.
+- CI: Trivy scans the image and the repository for vulnerabilities, secrets and misconfigurations, and CodeQL analyzes the code, on every push and every week. The tests run on every push, and another workflow builds the image, starts it and checks that it answers. Every GitHub Action is pinned by commit.
 
 [2.0.0]: https://github.com/javimentallab/mediaocd/compare/v1.1.3...v2.0.0
