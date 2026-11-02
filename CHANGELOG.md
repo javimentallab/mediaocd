@@ -39,6 +39,7 @@ First release under the name MediaOCD (formerly MediaTOC), now a standalone proj
 
 ### Fixed
 
+- **Texts stuck in Spanish in every language**: some fifty texts of the interface, such as the Jellyfin status, "Load durations from TMDB", the Duplicates page, the backup messages, the light and dark mode and the where-to-watch groups, now come from the catalogues in the 16 languages, and dates and the FilmAffinity score follow the interface language. Settings → Backup also warns that an invalid copy is not applied: the current database stays and the file is set aside as `data.db.uploaded.rejected-*`.
 - **Button contrast and spacing**: the Export JSON, Letterboxd CSV, restore and merge buttons now reach at least 4.5:1 in both themes, and icons, chips and buttons no longer touch, because the `gap-*` classes were missing from the compiled CSS.
 - **Invisible buttons in the light theme**: colour classes missing from the compiled CSS left white text on a white background on the TMDB key's Save button, the download buttons in Settings → Backup and the refresh button on the Downloaded page, among others. In the dark theme the same gap made descriptions hard to read.
 - **Settings → Backup** described a nightly automatic backup that doesn't come with the app. It now says so and points to "Host-side backups" in the README.
