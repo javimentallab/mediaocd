@@ -199,14 +199,63 @@ test('with the reverse sync off, nothing reaches Jellyfin', async () => {
   assert.deepStrictEqual((await playedMarks()).slice(before), []);
 });
 
-test('a mark pushed to Jellyfin does not come back as a second viewing', { todo: 'RISK: Jellyfin dates the push later, and /api/jellyfin/sync only skips the exact same date, so the Sync button adds a second row' }, async () => {
+const HOUR = 60 * 60 * 1000;
+const syncMovie = async (tmdbId, userData) => {
+  played = [{ Type: 'Movie', ProviderIds: { Tmdb: String(tmdbId) }, UserData: userData }];
+  const res = await app.api('POST', '/api/jellyfin/sync');
+  assert.strictEqual(res.status, 200, res.text);
+  return res.json;
+};
+const viewings = (id) => app.knex('seen').where('mediaItemId', id).orderBy('date');
+
+test('a mark pushed to Jellyfin does not come back as a second viewing', async () => {
   const id = await app.item({ title: 'There and back', tmdbId: 56 });
   library = [{ Id: 'jf-back', Type: 'Movie', Name: 'There and back', ProviderIds: { Tmdb: '56' } }];
   await markByExternalId({ mediaType: 'movie', id: { tmdbId: 56 } });
-  const { date } = await app.knex('seen').where('mediaItemId', id).first();
-  played = [{ Type: 'Movie', ProviderIds: { Tmdb: '56' }, UserData: { LastPlayedDate: new Date(date + 2000).toISOString() } }];
-  await app.api('POST', '/api/jellyfin/sync');
-  assert.strictEqual((await app.knex('seen').where('mediaItemId', id)).length, 1);
+  const [{ date }] = await viewings(id);
+
+  // Jellyfin dates it itself, a little later, or earlier if its clock is behind this one.
+  for (const offset of [2000, -5 * 60 * 1000]) {
+    const sync = await syncMovie(56, { LastPlayedDate: new Date(date + offset).toISOString() });
+    assert.deepStrictEqual([sync.lastImported, sync.lastSkipped], [0, 1], `${offset} ms away`);
+  }
+  assert.strictEqual((await viewings(id)).length, 1);
+});
+
+test('a rewatch in Jellyfin hours later is a new viewing', async () => {
+  const id = await app.item({ title: 'Seen again', tmdbId: 57 });
+  const first = Date.now() - 24 * HOUR;
+  await app.knex('seen').insert({ userId: app.admin.id, mediaItemId: id, date: first, kind: 'played' });
+  const sync = await syncMovie(57, { LastPlayedDate: new Date(first + 3 * HOUR).toISOString() });
+  assert.strictEqual(sync.lastImported, 1);
+  assert.deepStrictEqual((await viewings(id)).map((row) => row.date), [first, first + 3 * HOUR]);
+});
+
+test('something played with no date in Jellyfin counts once, not at every Sync', async () => {
+  const id = await app.item({ title: 'No date', tmdbId: 58 });
+  assert.strictEqual((await syncMovie(58, {})).lastImported, 1, 'not seen yet: it counts');
+
+  // Days later, far from the date that the first Sync had to make up.
+  await app.knex('seen').where('mediaItemId', id).update({ date: Date.now() - 72 * HOUR });
+  const again = await syncMovie(58, {});
+  assert.deepStrictEqual([again.lastImported, again.lastSkipped], [0, 1]);
+  assert.strictEqual((await viewings(id)).length, 1);
+});
+
+test('two episodes played within the same hour are two viewings', async () => {
+  const show = await app.show({ title: 'A binge', tvdbId: 59, episodes: [[1, 1, daysFromNow(-9)], [1, 2, daysFromNow(-8)]] });
+  onRequest(`/Users/${USER}/Items/series-binge`, { ProviderIds: { Tvdb: '59' } });
+  const at = Date.now() - 24 * HOUR;
+  played = [1, 2].map((episode) => ({
+    Type: 'Episode',
+    SeriesId: 'series-binge',
+    ParentIndexNumber: 1,
+    IndexNumber: episode,
+    UserData: { LastPlayedDate: new Date(at + episode * 60000).toISOString() },
+  }));
+  const res = await app.api('POST', '/api/jellyfin/sync');
+  assert.strictEqual(res.json.lastImported, 2, res.text);
+  assert.strictEqual((await viewings(show.id)).length, 2);
 });
 
 test('only an administrator can reach the Jellyfin settings and syncs', async () => {

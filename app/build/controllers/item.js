@@ -1340,6 +1340,15 @@ class MediaItemController {
       const items = (playedRes && playedRes.Items) || [];
       const seriesCache = new Map();
       let imported = 0, skipped = 0, unmatched = 0;
+      // A mark pushed from here comes back with the date Jellyfin gave it: a moment later, and
+      // by a clock that may differ from this one. So a viewing this close is that same viewing.
+      // With no date there is nothing to tell two viewings apart: if it is seen, it stays so.
+      const SAME_VIEWING_MS = 60 * 60 * 1000;
+      const alreadySeen = (mediaItemId, episodeId, playedAt, hasDate) => {
+        const query = knex('seen').where({ userId, mediaItemId }).where('episodeId', episodeId);
+        if (hasDate) query.whereBetween('date', [playedAt - SAME_VIEWING_MS, playedAt + SAME_VIEWING_MS]);
+        return query.first();
+      };
       for (const it of items) {
         const ud = it.UserData || {};
         const date = ud.LastPlayedDate ? new Date(ud.LastPlayedDate).getTime() : Date.now();
@@ -1351,7 +1360,7 @@ class MediaItemController {
           if (tmdb) media = await knex('mediaItem').where({ mediaType: 'movie', tmdbId: tmdb }).first();
           if (!media && imdb) media = await knex('mediaItem').where({ mediaType: 'movie', imdbId: imdb }).first();
           if (!media) { unmatched++; continue; }
-          const exists = await knex('seen').where({ userId, mediaItemId: media.id, date }).first();
+          const exists = await alreadySeen(media.id, null, date, !!ud.LastPlayedDate);
           if (exists) { skipped++; continue; }
           await knex('seen').insert({ userId, mediaItemId: media.id, episodeId: null, date });
           imported++;
@@ -1372,7 +1381,7 @@ class MediaItemController {
           if (!show) { unmatched++; continue; }
           const ep = await knex('episode').where({ tvShowId: show.id, seasonNumber: it.ParentIndexNumber, episodeNumber: it.IndexNumber }).first();
           if (!ep) { unmatched++; continue; }
-          const exists = await knex('seen').where({ userId, mediaItemId: show.id, episodeId: ep.id, date }).first();
+          const exists = await alreadySeen(show.id, ep.id, date, !!ud.LastPlayedDate);
           if (exists) { skipped++; continue; }
           await knex('seen').insert({ userId, mediaItemId: show.id, episodeId: ep.id, date });
           imported++;
