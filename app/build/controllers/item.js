@@ -950,8 +950,8 @@ class MediaItemController {
       const key = (r.title || '') + '|' + (r.year || '');
       const isRewatch = seenTitles.has(key);
       seenTitles.set(key, (seenTitles.get(key) || 0) + 1);
-      // Letterboxd rating is 0.5–5; MT rating is typically 0–10 (scale by /2)
-      const lbRating = r.rating ? (Math.round((r.rating / 2) * 2) / 2) : '';
+      // Letterboxd rating is 0.5–5, and ratings are stored as 1–5 stars: no scaling.
+      const lbRating = r.rating || '';
       lines.push([
         dateStr,
         csvEscape(r.title),

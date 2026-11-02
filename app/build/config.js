@@ -17,7 +17,7 @@ const logs = [];
 const configMigrationLogs = () => logs;
 exports.configMigrationLogs = configMigrationLogs;
 class Config {
-  static version = '1.2.0';
+  static version = '2.0.0';
   static configDirectory = (0, _path.join)((0, _os.homedir)(), '.mediaocd');
   static MIGRATIONS_DIRECTORY = (0, _path.resolve)(__dirname, 'migrations');
   static NODE_ENV = process.env.NODE_ENV;

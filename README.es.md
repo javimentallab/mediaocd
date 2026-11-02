@@ -167,13 +167,13 @@ e instala las dependencias desde `app/package-lock.json`.
 ## Publicar una versión
 
 ```sh
-./release.sh 1.2.0
+./release.sh 2.0.0
 ```
 
 - Antes, escribe la entrada en [`CHANGELOG.md`](CHANGELOG.md) y haz su commit.
 - Se detiene si hay cambios sin commitear, si la rama no es `main`, si la etiqueta ya existe o si la versión no sigue semver.
 - Sube la versión en `app/build/config.js`, `app/package.json` y `app/package-lock.json`.
-- Hace el commit, crea la etiqueta `v1.2.0`, sube las dos cosas y prepara un borrador de release en GitHub con los commits desde la etiqueta anterior, para que lo edites antes de publicarlo.
+- Hace el commit, crea la etiqueta `v2.0.0`, sube las dos cosas y prepara un borrador de release en GitHub con los commits desde la etiqueta anterior, para que lo edites antes de publicarlo.
 
 ## Licencia
 

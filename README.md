@@ -167,13 +167,13 @@ and installs the dependencies from `app/package-lock.json`.
 ## Releasing
 
 ```sh
-./release.sh 1.2.0
+./release.sh 2.0.0
 ```
 
 - Write the entry in [`CHANGELOG.md`](CHANGELOG.md) and commit it first.
 - Aborts if the working tree is dirty, the branch isn't `main`, the tag already exists or the version isn't semver.
 - Bumps the version in `app/build/config.js`, `app/package.json` and `app/package-lock.json`.
-- Commits, tags `v1.2.0`, pushes both and drafts a GitHub release with the commit log since the previous tag, for you to edit before publishing.
+- Commits, tags `v2.0.0`, pushes both and drafts a GitHub release with the commit log since the previous tag, for you to edit before publishing.
 
 ## License
 

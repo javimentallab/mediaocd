@@ -2,7 +2,7 @@
 
 Notable changes to MediaOCD. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/).
 
-## [1.2.0] - 2026-11-01
+## [2.0.0] - 2026-11-01
 
 First release under the name MediaOCD (formerly MediaTOC), now a standalone project.
 
@@ -38,6 +38,7 @@ First release under the name MediaOCD (formerly MediaTOC), now a standalone proj
 
 ### Fixed
 
+- **Letterboxd export**: ratings were halved, so 5 stars came out as 2.5. They are now exported as stored.
 - Searches with many results failing with "database is locked".
 - Returning shows flagged as completed after catching up on the aired episodes.
 - Marking a TV episode as complete removing the show from the watchlist and In progress.
@@ -57,4 +58,4 @@ First release under the name MediaOCD (formerly MediaTOC), now a standalone proj
 - `npm`, `npx` and `corepack` removed from the final image, as they carried their own HIGH advisories.
 - CI: Trivy scans the image and the repository for vulnerabilities, secrets and misconfigurations on every push and every week, with `trivy-action` pinned by commit. A second workflow builds the image, starts it and checks that it answers.
 
-[1.2.0]: https://github.com/javimentallab/mediaocd/compare/v1.1.3...v1.2.0
+[2.0.0]: https://github.com/javimentallab/mediaocd/compare/v1.1.3...v2.0.0
