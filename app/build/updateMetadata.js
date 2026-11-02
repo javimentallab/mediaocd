@@ -169,7 +169,7 @@ const sendNotifications = async (oldMediaItem, newMediaItem) => {
     }
   }
 };
-const updateMediaItem = async oldMediaItem => {
+const runMediaItemUpdate = async oldMediaItem => {
   const title = oldMediaItem.title;
   if (oldMediaItem.lastTimeUpdated) {
     const date = _chalk.default.blue(new Date(oldMediaItem.lastTimeUpdated).toLocaleString());
@@ -237,6 +237,16 @@ const updateMediaItem = async oldMediaItem => {
     await _mediaItem.mediaItemRepository.unlock(oldMediaItem.id);
     throw error;
   }
+};
+// One update per item at a time: whoever asks while it runs gets that same update, instead of
+// failing with "MediaItem 8 is locked". The lock stays, for what is not in this process.
+const updatesInProgress = new Map();
+const updateMediaItem = oldMediaItem => {
+  const running = updatesInProgress.get(oldMediaItem.id);
+  if (running) return running;
+  const update = runMediaItemUpdate(oldMediaItem).finally(() => updatesInProgress.delete(oldMediaItem.id));
+  updatesInProgress.set(oldMediaItem.id, update);
+  return update;
 };
 exports.updateMediaItem = updateMediaItem;
 const shouldUpdate = mediaItem => {
