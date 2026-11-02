@@ -6,13 +6,10 @@
 
 const { after, before, beforeEach, test } = require('node:test');
 const assert = require('node:assert');
-const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { DATABASE_PATH, startApp, STORAGE } = require('./helpers/app');
-
-const BOOT = path.join(__dirname, 'helpers', 'boot.js');
+const { DATABASE_PATH, restartApp, startApp, STORAGE } = require('./helpers/app');
 
 let app;
 let backup;
@@ -212,17 +209,6 @@ test('if the last step fails, everything goes back where it was', (t) => {
 
 // --- The whole thing, with real restarts ---
 
-function restart() {
-  const result = spawnSync(process.execPath, [BOOT], {
-    encoding: 'utf8',
-    env: { ...process.env, TEST_LOGS: '1' },
-    timeout: 60000,
-  });
-  assert.strictEqual(result.status, 0, result.stderr || result.stdout);
-  const line = result.stdout.split('\n').find((l) => l.startsWith('BOOT '));
-  return { ...JSON.parse(line.slice(5)), log: result.stdout };
-}
-
 test('upload, restart: the backup is applied, and only the first time', async () => {
   await app.item({ title: 'After the backup', tmdbId: 2 });
   const octet = { 'Content-Type': 'application/octet-stream' };
@@ -230,7 +216,7 @@ test('upload, restart: the backup is applied, and only the first time', async ()
   assert.strictEqual(uploaded.status, 200, uploaded.text);
   await app.stop();
 
-  const first = restart();
+  const first = restartApp();
   assert.strictEqual(first.configuration, 200, 'the app works on it');
   assert.ok(first.titles.includes('In the backup'));
   assert.ok(!first.titles.includes('After the backup'), 'what came after the backup is gone from the database');
@@ -240,7 +226,7 @@ test('upload, restart: the backup is applied, and only the first time', async ()
   assert.strictEqual(kept.length, 1);
   assert.ok(titlesIn(path.join(STORAGE, kept[0])).includes('After the backup'), 'and kept in the previous one');
 
-  const second = restart();
+  const second = restartApp();
   assert.deepStrictEqual(second.titles, first.titles);
   assert.deepStrictEqual(second.files.filter((name) => name.includes('before-restore-') && !/-(wal|shm)$/.test(name)), kept, 'no second copy');
   assert.strictEqual(/uploaded backup/.test(second.log), false, 'nothing to say');
@@ -252,7 +238,7 @@ test('upload, restart: a corrupt backup leaves the database alone, and the log s
   fs.writeFileSync(path.join(STORAGE, 'data.db.uploaded'), corrupt);
   const before = (new Sqlite(DATABASE_PATH, { readonly: true })).prepare('select count(*) as c from mediaItem').get().c;
 
-  const result = restart();
+  const result = restartApp();
 
   assert.strictEqual(result.configuration, 200, 'the app starts');
   assert.strictEqual(result.titles.length, before);

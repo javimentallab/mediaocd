@@ -242,6 +242,10 @@ const initialize = async args => {
   (0, _restoreUploadedBackup.applyUploadedBackup)();
   _dbconfig.Database.init();
   await _dbconfig.Database.runMigrations();
+  // Nothing is updating any item yet, so a lock still here was left by a crash. Without this
+  // the item answers 500 "is locked" until the hourly clean-up, which waits a whole day.
+  const orphanLocks = await _dbconfig.Database.knex('mediaItem').whereNotNull('lockedAt').update('lockedAt', null);
+  if (orphanLocks > 0) _logger.logger.info(`Cleared ${orphanLocks} item locks left by an unclean stop`);
   _logger.logger.info(`Server timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`);
   _logger.logger.info(`Server time: ${new Date().toLocaleString()}`);
   let configuration = await _globalSettings.configurationRepository.get();

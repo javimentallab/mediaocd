@@ -200,6 +200,21 @@ function migratedDatabasePath() {
 let current = null;
 
 /**
+ * A real restart: helpers/boot.js starts the app in a new process, on this same /storage, and
+ * says what it finds. It has to run after stop().
+ */
+function restartApp(env = {}) {
+  const result = childProcess.spawnSync(process.execPath, [path.join(__dirname, 'boot.js')], {
+    encoding: 'utf8',
+    env: { ...process.env, TEST_LOGS: '1', ...env },
+    timeout: 60000,
+  });
+  assert.strictEqual(result.status, 0, result.stderr || result.stdout);
+  const line = result.stdout.split('\n').find((l) => l.startsWith('BOOT '));
+  return { ...JSON.parse(line.slice(5)), log: result.stdout };
+}
+
+/**
  * keepStorage starts on the /storage that is already there, as a restart would, and only if
  * it is the one of these tests. users: false does not create the administrator.
  */
@@ -374,5 +389,5 @@ async function startApp({ keepStorage = false, users = true } = {}) {
 }
 
 module.exports = {
-  startApp, prepareStorage, onRequest, calls, unexpected, daysFromNow, STORAGE, DATABASE_PATH,
+  startApp, restartApp, prepareStorage, onRequest, calls, unexpected, daysFromNow, STORAGE, DATABASE_PATH,
 };
