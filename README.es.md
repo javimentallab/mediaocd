@@ -175,6 +175,10 @@ e instala las dependencias desde `app/package-lock.json`.
 - Sube la versión en `app/build/config.js`, `app/package.json` y `app/package-lock.json`.
 - Hace el commit, crea la etiqueta `v2.0.0`, sube las dos cosas y prepara un borrador de release en GitHub con los commits desde la etiqueta anterior, para que lo edites antes de publicarlo.
 
+## Contribuir
+
+Consulta [CONTRIBUTING](CONTRIBUTING.md), en inglés. Para avisar en privado de un problema de seguridad, consulta [SECURITY](SECURITY.md).
+
 ## Licencia
 
 MIT: consulta [`LICENSE`](LICENSE). Los componentes de terceros y sus licencias están en [`NOTICE`](NOTICE).

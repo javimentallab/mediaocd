@@ -175,6 +175,10 @@ and installs the dependencies from `app/package-lock.json`.
 - Bumps the version in `app/build/config.js`, `app/package.json` and `app/package-lock.json`.
 - Commits, tags `v2.0.0`, pushes both and drafts a GitHub release with the commit log since the previous tag, for you to edit before publishing.
 
+## Contributing
+
+See [CONTRIBUTING](CONTRIBUTING.md). To report a security problem privately, see [SECURITY](SECURITY.md).
+
 ## License
 
 MIT — see [`LICENSE`](LICENSE). Third-party components and their licenses are listed in [`NOTICE`](NOTICE).
