@@ -27,6 +27,9 @@ jobs:
           node tools/rehash-web.js
           git diff --exit-code --stat app/public || { echo "run node tools/rehash-web.js and commit"; exit 1; }
 
+      - name: Example compose file is valid
+        run: docker compose -f docker-compose.example.yml config -q
+
       - name: Build image
         run: |
           set -o pipefail

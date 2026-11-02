@@ -18,6 +18,10 @@ services:
       # Image cache — bind-mounted so server-side images survive container rebuilds.
       - ./mediaocd-assets:/assets
     environment:
+      # Owner of the files in the two folders above: `id -u` and `id -g` on the host.
+      PUID: "1000"
+      PGID: "1000"
+
       # --- Jellyfin integration (optional) ---
       # If set, MT can sync seen status with Jellyfin and show "Available on Jellyfin" badges.
       # Leave unset to disable the entire Jellyfin section.

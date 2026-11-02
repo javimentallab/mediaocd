@@ -24,5 +24,11 @@ client_secret*.json
 docker-compose.local.yml
 docker-compose.override.yml
 
+# What the install steps of the README leave in this folder: the compose file can hold
+# secrets, and the data folders hold the database, API keys and images
+/docker-compose.yml
+/mediaocd-data/
+/mediaocd-assets/
+
 # Personal project journal — kept locally, not for public consumption
 TASKS.md
