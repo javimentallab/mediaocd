@@ -26,7 +26,7 @@ Gestor autoalojado de todo lo que ves, lees, juegas, escuchas y a lo que asistes
 
 Un gestor pensado para **completistas**, con el castellano como primer idioma y traducido a 16 idiomas:
 
-- **Verbos de consumo por medio**, no solo «visto»: jugado / visto / leído / escuchado / asistido. Un mismo elemento puede tener varios.
+- **Verbos de consumo por medio**, no solo «visto»: jugado / visto / leído / escuchado; el teatro cuenta como visto. Un mismo elemento puede tener varios.
 - **Página «En proceso» que se ordena sola**: todo lo que estás viendo, leyendo, jugando o escuchando, de cualquier tipo. Las series en emisión se quedan mientras vas al día, la tarjeta muestra el siguiente capítulo (incluso uno que hayas visto antes de su estreno) y la serie sale sola cuando termina su temporada o la serie entera. Lo abandonado tiene su propia lista. Puedes hacerla tu página de inicio.
 - **Progreso en unidades reales**: horas y minutos para películas, juegos, teatro y capítulos; páginas para libros; posición para audiolibros, con un indicador de capítulo sobre las barras de lectura y escucha y el número real de capítulos de los audiolibros de Audible.
 - **Integración con Jellyfin en los dos sentidos**: marca como descargado lo que aparece en tu biblioteca de Jellyfin, abre enlaces directos «Reproducir en Jellyfin» y sincroniza de vuelta lo que ves allí.

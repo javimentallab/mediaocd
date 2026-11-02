@@ -26,7 +26,7 @@ Self-hosted tracker for everything you watch, read, play, listen to and attend â
 
 A media tracker built for **completionists**, Spanish-first and translated into 16 languages:
 
-- **Per-medium consumption verbs**, not just "seen": played / watched / read / listened / attended. The same item can have several.
+- **Per-medium consumption verbs**, not just "seen": played / watched / read / listened; theatre counts as seen. The same item can have several.
 - **"In progress" page that keeps itself tidy**: everything you are watching, reading, playing or listening to, for every media type. Airing shows stay while you are up to date, the card shows the next episode (even one you watched ahead of its air date) and a show leaves by itself when its season or series ends. Abandoned items have their own list. You can make it your start page.
 - **Progress in real units**: hours and minutes for movies, games, theatre and episodes; pages for books; position for audiobooks, with a chapter indicator over the read / listen bars and the real chapter count of Audible audiobooks.
 - **Two-way Jellyfin integration**: marks items as downloaded when they appear in your Jellyfin library, opens "Play in Jellyfin" deeplinks, sync-back when you watch something there.
