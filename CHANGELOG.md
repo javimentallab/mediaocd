@@ -52,6 +52,9 @@ First release under the name MediaOCD (formerly MediaTOC), now a standalone proj
 - **Restoring an uploaded database**: nothing applied it. It is now applied at the next start if it passes an integrity check and is a MediaOCD database; the current one is kept as `data.db.before-restore-<date>`, with its `-wal` and `-shm` files, and one that fails is set aside and logged.
 - README: there is no "attended" verb in the app; theatre counts as seen.
 - **Opening the same item from two clients during its first load** answered 500 ("MediaItem 8 is locked") to one of them. The second one now waits for that same update.
+- **Sync with Jellyfin**: a mark pushed from MediaOCD would have come back as a second viewing, and something played with no date there added one at every Sync.
+- **An item locked by a crash** answered 500 ("is locked") for up to a day. These locks are now cleared at the next start.
+- **Errors of the server** that the interface shows as they come were in Spanish in every language. They are now in English.
 - **Letterboxd export**: ratings were halved, so 5 stars came out as 2.5. They are now exported as stored.
 - Searches with many results failing with "database is locked".
 - Returning shows flagged as completed after catching up on the aired episodes.
