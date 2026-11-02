@@ -111,6 +111,9 @@ function _jfCfg() {
 
 // --- Jellyfin reverse-sync helper (MT seen → Jellyfin played) ---
 async function _jfPushPlayed(mediaItem, episode, userId) { // _jfPushPlayed admin-gated
+  // Jellyfin only has movies and shows. Theatre keeps a Wikidata or teatro.es number in
+  // tmdbId, which would match an unrelated movie.
+  if (mediaItem.mediaType !== 'movie' && mediaItem.mediaType !== 'tv') return;
   try {
     const u = await _dbconfig.Database.knex('user').where('id', userId).first();
     if (!u || !u.admin) return;
@@ -157,7 +160,8 @@ async function _jfPushPlayed(mediaItem, episode, userId) { // _jfPushPlayed admi
       const er = await fetch(base + eq, { headers });
       if (!er.ok) return;
       const ej = await er.json();
-      target = ej.Items && ej.Items[0];
+      // The right episode or none: never the first one of whatever came back.
+      target = (ej.Items || []).find(it => it.ParentIndexNumber === episode.seasonNumber && it.IndexNumber === episode.episodeNumber);
     } else {
       target = matched;
     }
@@ -350,6 +354,8 @@ class SeenController {
       episodeNumber,
       duration
     } = req.body;
+    // Only these two kinds exist: anything else counts as played, like no kind at all.
+    const kind = req.body.kind === 'watched' ? 'watched' : 'played';
     const {
       mediaItem,
       episode,
@@ -365,6 +371,7 @@ class SeenController {
       res.send(error);
       return;
     }
+    let isNewMark = false;
     await _dbconfig.Database.knex.transaction(async trx => {
       const previousSeenItem = await trx('seen').where('userId', userId).where('mediaItemId', mediaItem.id).where('episodeId', (episode === null || episode === void 0 ? void 0 : episode.id) || null).where('kind', kind || 'played').where('date', '>', Date.now() - 1000 * 60 * 60 * 12);
       if (previousSeenItem.length > 0) {
@@ -380,11 +387,14 @@ class SeenController {
         duration: duration,
         kind: kind || 'played'
       });
+      isNewMark = true;
     });
-    _jfPushPlayed(mediaItem, episode, userId);
+    // Only a new mark goes to Jellyfin. Pushing a repeated one would never end if Jellyfin
+    // reports its played marks to this route, for example with a webhook.
+    if (isNewMark) _jfPushPlayed(mediaItem, episode, userId);
     _removeFromWatchlistIfComplete(userId, mediaItem);
     _clearAipIfSeasonOver(userId, mediaItem);
-    res.status(200);
+    res.send();
   });
 
   /**

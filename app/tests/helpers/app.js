@@ -272,7 +272,9 @@ async function startApp() {
       payload = JSON.stringify(body);
       allHeaders['Content-Type'] = 'application/json';
     }
-    const response = await fetch(url, { method, headers: allHeaders, body: payload, redirect: 'manual' });
+    const response = await fetch(url, {
+      method, headers: allHeaders, body: payload, redirect: 'manual', signal: AbortSignal.timeout(15000),
+    });
     const buffer = Buffer.from(await response.arrayBuffer());
     const text = buffer.toString('utf8');
     let json;

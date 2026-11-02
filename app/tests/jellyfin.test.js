@@ -14,6 +14,7 @@ const USER = 'jf-user';
 let app;
 let library;
 let played;
+let episodesOfShow;
 
 before(async () => {
   app = await startApp();
@@ -21,8 +22,9 @@ before(async () => {
     const { pathname, searchParams } = new URL(url);
     if (pathname === '/System/Info') return { ServerName: 'Test server', Version: '10.10' };
     if (pathname === `/Users/${USER}/Items` && searchParams.get('Filters') === 'IsPlayed') return { Items: played };
+    if (pathname === `/Users/${USER}/Items` && searchParams.get('IncludeItemTypes') === 'Episode') return { Items: episodesOfShow };
     if (pathname === `/Users/${USER}/Items`) return { Items: library };
-    if (pathname === `/Users/${USER}/PlayedItems/jf-movie` && init.method === 'POST') return { Played: true };
+    if (pathname.startsWith(`/Users/${USER}/PlayedItems/`) && init.method === 'POST') return { Played: true };
     return { status: 404, body: `no fake for ${url}` };
   });
   const saved = await app.api('PUT', '/api/jellyfin/config', {
@@ -34,6 +36,7 @@ after(async () => { await app.stop(); });
 beforeEach(() => {
   library = [];
   played = [];
+  episodesOfShow = [];
   if (global._jfLookupCache) global._jfLookupCache.clear();
   if (global._jfReverseCache) global._jfReverseCache.clear();
 });
@@ -122,18 +125,88 @@ test('"Play in Jellyfin" links to the public address', async () => {
   assert.strictEqual(missing.json.found, false);
 });
 
-test('with the reverse sync on, an item marked by external id is marked in Jellyfin too', { todo: 'BUG: addByExternalId in seen.js uses an undeclared "kind", so this route always answers 500 and the reverse sync never runs' }, async () => {
-  await app.item({ title: 'Marked here', tmdbId: 51 });
-  library = [{ Id: 'jf-movie', Type: 'Movie', Name: 'Marked here', ProviderIds: { Tmdb: '51' } }];
-  const res = await app.api('PUT', '/api/seen/by-external-id', {
-    body: { mediaType: 'movie', id: { tmdbId: 51 } },
-  });
-  assert.strictEqual(res.status, 200, res.text);
-  const posted = () => calls.some((c) => c.method === 'POST' && c.url.endsWith(`/Users/${USER}/PlayedItems/jf-movie`));
-  for (let i = 0; i < 50 && !posted(); i += 1) {
+// What reached Jellyfin as a played mark, after giving a fire-and-forget push time to arrive.
+async function playedMarks(atLeast = 0) {
+  const marks = () => calls.filter((c) => c.method === 'POST' && c.url.includes('/PlayedItems/')).map((c) => c.url.split('/').pop());
+  for (let i = 0; i < 25 && marks().length < atLeast; i += 1) {
     await new Promise((resolve) => { setTimeout(resolve, 20); });
   }
-  assert.ok(posted(), 'Jellyfin got the played mark');
+  await new Promise((resolve) => { setTimeout(resolve, 60); });
+  return marks();
+}
+const markByExternalId = (body) => app.api('PUT', '/api/seen/by-external-id', { body });
+
+test('with the reverse sync on, an item marked by external id is marked in Jellyfin too, once', async () => {
+  const id = await app.item({ title: 'Marked here', tmdbId: 51 });
+  library = [{ Id: 'jf-movie', Type: 'Movie', Name: 'Marked here', ProviderIds: { Tmdb: '51' } }];
+  const before = (await playedMarks()).length;
+
+  const first = await markByExternalId({ mediaType: 'movie', id: { tmdbId: 51 } });
+  assert.strictEqual(first.status, 200, first.text);
+  assert.deepStrictEqual((await playedMarks(before + 1)).slice(before), ['jf-movie']);
+  assert.strictEqual((await app.knex('seen').where('mediaItemId', id)).length, 1);
+
+  // Jellyfin could report that mark back here: it must end, not bounce between the two.
+  const echo = await markByExternalId({ mediaType: 'movie', id: { tmdbId: 51 } });
+  assert.strictEqual(echo.status, 200, echo.text);
+  assert.deepStrictEqual((await playedMarks()).slice(before), ['jf-movie'], 'no second push');
+  assert.strictEqual((await app.knex('seen').where('mediaItemId', id)).length, 1, 'no second row');
+});
+
+test('a mark by external id can say watched, and anything else counts as played', async () => {
+  const id = await app.item({ title: 'Kinds', mediaType: 'video_game', igdbId: 52 });
+  await markByExternalId({ mediaType: 'video_game', id: { igdbId: 52 }, kind: 'watched' });
+  await markByExternalId({ mediaType: 'video_game', id: { igdbId: 52 }, kind: 'nonsense' });
+  const kinds = await app.knex('seen').where('mediaItemId', id).select('kind').orderBy('kind');
+  assert.deepStrictEqual(kinds.map((row) => row.kind), ['played', 'watched']);
+});
+
+test('an episode goes to Jellyfin as that episode, or not at all', async () => {
+  await app.show({ title: 'A pushed show', tmdbId: 53, episodes: [[1, 1, daysFromNow(-9)], [1, 2, daysFromNow(-8)], [1, 3, daysFromNow(-7)]] });
+  library = [{ Id: 'jf-show', Type: 'Series', Name: 'A pushed show', ProviderIds: { Tmdb: '53' } }];
+  episodesOfShow = [
+    { Id: 'jf-e1', ParentIndexNumber: 1, IndexNumber: 1 },
+    { Id: 'jf-e2', ParentIndexNumber: 1, IndexNumber: 2 },
+  ];
+  const before = (await playedMarks()).length;
+  const second = await markByExternalId({ mediaType: 'tv', id: { tmdbId: 53 }, seasonNumber: 1, episodeNumber: 2 });
+  assert.strictEqual(second.status, 200, second.text);
+  assert.deepStrictEqual((await playedMarks(before + 1)).slice(before), ['jf-e2']);
+
+  const third = await markByExternalId({ mediaType: 'tv', id: { tmdbId: 53 }, seasonNumber: 1, episodeNumber: 3 });
+  assert.strictEqual(third.status, 200, third.text);
+  assert.deepStrictEqual((await playedMarks()).slice(before), ['jf-e2'], 'Jellyfin does not have it');
+});
+
+test('theatre never reaches Jellyfin, even if its number matches a movie there', async () => {
+  // Theatre keeps its Wikidata number in tmdbId, and that can be the TMDB id of any movie.
+  await app.item({ title: 'A play', mediaType: 'theater', source: 'wikidata', tmdbId: 54 });
+  library = [{ Id: 'jf-unrelated', Type: 'Movie', Name: 'An unrelated movie', ProviderIds: { Tmdb: '54' } }];
+  const before = (await playedMarks()).length;
+  const res = await markByExternalId({ mediaType: 'theater', id: { tmdbId: 54 } });
+  assert.strictEqual(res.status, 200, res.text);
+  assert.deepStrictEqual((await playedMarks()).slice(before), []);
+});
+
+test('with the reverse sync off, nothing reaches Jellyfin', async () => {
+  await app.api('PUT', '/api/jellyfin/config', { body: { reverseSync: false } });
+  await app.item({ title: 'Stays here', tmdbId: 55 });
+  library = [{ Id: 'jf-stays', Type: 'Movie', Name: 'Stays here', ProviderIds: { Tmdb: '55' } }];
+  const before = (await playedMarks()).length;
+  const res = await markByExternalId({ mediaType: 'movie', id: { tmdbId: 55 } });
+  await app.api('PUT', '/api/jellyfin/config', { body: { reverseSync: true } });
+  assert.strictEqual(res.status, 200, res.text);
+  assert.deepStrictEqual((await playedMarks()).slice(before), []);
+});
+
+test('a mark pushed to Jellyfin does not come back as a second viewing', { todo: 'RISK: Jellyfin dates the push later, and /api/jellyfin/sync only skips the exact same date, so the Sync button adds a second row' }, async () => {
+  const id = await app.item({ title: 'There and back', tmdbId: 56 });
+  library = [{ Id: 'jf-back', Type: 'Movie', Name: 'There and back', ProviderIds: { Tmdb: '56' } }];
+  await markByExternalId({ mediaType: 'movie', id: { tmdbId: 56 } });
+  const { date } = await app.knex('seen').where('mediaItemId', id).first();
+  played = [{ Type: 'Movie', ProviderIds: { Tmdb: '56' }, UserData: { LastPlayedDate: new Date(date + 2000).toISOString() } }];
+  await app.api('POST', '/api/jellyfin/sync');
+  assert.strictEqual((await app.knex('seen').where('mediaItemId', id)).length, 1);
 });
 
 test('only an administrator can reach the Jellyfin settings and syncs', async () => {

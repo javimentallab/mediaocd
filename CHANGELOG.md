@@ -45,6 +45,7 @@ First release under the name MediaOCD (formerly MediaTOC), now a standalone proj
 - **Phone layout**: the backup table stacks its rows, long log lines wrap, and the TMDB key form and the links row of the details page no longer run off the screen.
 - **Example compose file**: with the optional variables commented out it failed validation, so `docker compose build` stopped before building. What the install steps leave in the repository folder is now ignored by git.
 - **Portuguese, French and Danish**: many texts were still in English, and the tooltip of the rating stars was in Spanish in every language.
+- **`PUT /api/seen/by-external-id`** always answered 500, so the reverse sync with Jellyfin never ran. It now pushes only new marks, only of movies and shows, and only the exact episode.
 - **Letterboxd export**: ratings were halved, so 5 stars came out as 2.5. They are now exported as stored.
 - Searches with many results failing with "database is locked".
 - Returning shows flagged as completed after catching up on the aired episodes.
