@@ -131,6 +131,8 @@ The file is `data.db` as it is on disk, and the database runs in WAL mode, so th
 
 If `/storage/data.db` is missing when the container starts, it restores the newest `/storage/backups/data-*.db` by itself: with the example compose file, that is `./mediaocd-data/backups/`. Keep another copy away from that folder.
 
+A database uploaded with `POST /api/backup/restore`, or from the settings, is applied at the next start if it passes an integrity check and is a MediaOCD database of this version or an older one. The current database is kept next to it as `data.db.before-restore-<date>`, with its `-wal` and `-shm` files. One that fails becomes `data.db.uploaded.rejected-<date>`, the app starts with the current database, and the log says why.
+
 ## Development
 
 There is no build step: the image copies `app/` as is on top of the official Node image

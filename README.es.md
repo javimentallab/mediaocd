@@ -131,6 +131,8 @@ El fichero es `data.db` tal como está en el disco, y la base de datos funciona 
 
 Si `/storage/data.db` no existe cuando arranca el contenedor, restaura sola la copia `/storage/backups/data-*.db` más reciente: con el compose de ejemplo, eso es `./mediaocd-data/backups/`. Guarda otra copia lejos de esa carpeta.
 
+Una base de datos subida con `POST /api/backup/restore`, o desde los ajustes, se aplica en el siguiente arranque si supera una comprobación de integridad y es una base de MediaOCD de esta versión o de una anterior. La actual se guarda a su lado como `data.db.before-restore-<fecha>`, con sus ficheros `-wal` y `-shm`. La que falla pasa a ser `data.db.uploaded.rejected-<fecha>`, la app arranca con la base actual y el log dice por qué.
+
 ## Desarrollo
 
 No hay paso de compilación: la imagen copia `app/` tal cual sobre la imagen oficial de Node

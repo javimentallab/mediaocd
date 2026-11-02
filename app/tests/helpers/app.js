@@ -199,9 +199,17 @@ function migratedDatabasePath() {
 
 let current = null;
 
-async function startApp() {
+/**
+ * keepStorage starts on the /storage that is already there, as a restart would, and only if
+ * it is the one of these tests. users: false does not create the administrator.
+ */
+async function startApp({ keepStorage = false, users = true } = {}) {
   assert.strictEqual(current, null, 'one app per test file');
-  prepareStorage();
+  if (keepStorage) {
+    assert.ok(fs.existsSync(path.join(STORAGE, MARKER)), `${STORAGE} is not the folder of these tests`);
+  } else {
+    prepareStorage();
+  }
 
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'mediaocd-tests-'));
   Object.assign(process.env, {
@@ -222,7 +230,7 @@ async function startApp() {
 
   // Migrations are most of the start-up: they run once, and the next files copy the result.
   const migrated = migratedDatabasePath();
-  if (fs.existsSync(migrated)) fs.copyFileSync(migrated, DATABASE_PATH);
+  if (!keepStorage && fs.existsSync(migrated)) fs.copyFileSync(migrated, DATABASE_PATH);
 
   /* eslint-disable global-require */
   const { initialize, Server } = require('../../build/server');
@@ -240,7 +248,7 @@ async function startApp() {
   };
 
   const { sessionKey } = await initialize({ serverLang: 'en', tmdbLang: 'en', audibleLang: 'us', demo: false });
-  if (!fs.existsSync(migrated)) {
+  if (!keepStorage && !fs.existsSync(migrated)) {
     const partial = `${migrated}.${process.pid}`;
     await Database.knex.raw('VACUUM INTO ?', [partial]);
     fs.renameSync(partial, migrated);
@@ -301,8 +309,8 @@ async function startApp() {
   }
 
   // The first user to register becomes the administrator.
-  const admin = await createUser('admin');
-  const api = (method, urlPath, options = {}) => request(method, urlPath, { token: admin.token, ...options });
+  const admin = users ? await createUser('admin') : null;
+  const api = (method, urlPath, options = {}) => request(method, urlPath, { token: admin && admin.token, ...options });
 
   async function item(fields = {}) {
     const [row] = await Database.knex('mediaItem').insert({

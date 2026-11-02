@@ -1,7 +1,7 @@
 'use strict';
 
 // "Full backup / restore ... plus JSON and Letterboxd CSV exports." The auto-restore when
-// data.db is missing is in auto-restore.test.js, because it needs no running app.
+// data.db is missing is in auto-restore.test.js, and applying an upload in restore.test.js.
 
 const { after, before, test } = require('node:test');
 const assert = require('node:assert');
@@ -195,9 +195,4 @@ test('a restore only accepts SQLite files', async () => {
   const refused = await app.api('POST', '/api/backup/restore', { raw: Buffer.from('this is not a database'), headers });
   assert.strictEqual(refused.status, 400);
   assert.strictEqual(fs.existsSync(UPLOADED), false, 'nothing is left behind');
-});
-
-test('a restored database is applied at the next start', { todo: 'NOT IMPLEMENTED: nothing in the repository reads data.db.uploaded' }, () => {
-  const entrypoint = fs.readFileSync(path.join(__dirname, '..', '..', 'docker', 'entrypoint.sh'), 'utf8');
-  assert.ok(entrypoint.includes('data.db.uploaded'));
 });

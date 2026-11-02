@@ -29,6 +29,7 @@ var _dbconfig = require("./dbconfig");
 var _utils = require("./utils");
 var _updateMetadata = require("./updateMetadata");
 var _sendNotifications = require("./sendNotifications");
+var _restoreUploadedBackup = require("./restoreUploadedBackup");
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
 class Server {
   #app;
@@ -238,6 +239,7 @@ const initialize = async args => {
   _config.Config.migrate();
   _config.Config.validate();
   _logger.logger.init();
+  (0, _restoreUploadedBackup.applyUploadedBackup)();
   _dbconfig.Database.init();
   await _dbconfig.Database.runMigrations();
   _logger.logger.info(`Server timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`);

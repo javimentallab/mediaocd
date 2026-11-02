@@ -47,6 +47,7 @@ First release under the name MediaOCD (formerly MediaTOC), now a standalone proj
 - **Portuguese, French and Danish**: many texts were still in English, and the tooltip of the rating stars was in Spanish in every language.
 - **`PUT /api/seen/by-external-id`** always answered 500, so the reverse sync with Jellyfin never ran. It now pushes only new marks, only of movies and shows, and only the exact episode.
 - **JSON import**: everything came back as played, losing what was only watched. Exports from before there were kinds still import, as played.
+- **Restoring an uploaded database**: nothing applied it. It is now applied at the next start if it passes an integrity check and is a MediaOCD database; the current one is kept as `data.db.before-restore-<date>`, with its `-wal` and `-shm` files, and one that fails is set aside and logged.
 - **Letterboxd export**: ratings were halved, so 5 stars came out as 2.5. They are now exported as stored.
 - Searches with many results failing with "database is locked".
 - Returning shows flagged as completed after catching up on the aired episodes.
