@@ -25,6 +25,7 @@ First release under the name MediaOCD (formerly MediaTOC), now a standalone proj
 - **Rate anything**: the rating star now shows on items with no release date or a future one.
 - **Optional MCP server** in `contrib/mcp-server`, so an AI assistant can search your library, mark items as seen and manage the watchlist and ratings.
 - **Optional `contrib/jf-torrents-organize`**: hardlinks qBittorrent downloads into a layout Jellyfin indexes correctly, with season-pack support.
+- **Tests of every feature on the front page**, on the real server with a throwaway database and the external services simulated, in CI.
 - `README.es.md`, `NOTICE`, `SECURITY.md`, `CONTRIBUTING.md` and this changelog.
 
 ### Changed

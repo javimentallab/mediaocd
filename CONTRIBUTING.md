@@ -18,11 +18,14 @@ The server is in `app/build` and the web client in `app/public`, which is a buil
 docker build -t mediaocd .
 ```
 
-The tests of the app need nothing installed:
+The tests of the app run the real server on a throwaway database, with every external service simulated. They need a folder `/storage`, so run them in a container; they refuse to start if `/storage` holds anything that isn't theirs:
 
 ```sh
-node --test app/tests/*.test.js
+docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD":/w -w /w/app node:22-alpine npm ci --omit=dev --legacy-peer-deps --no-audit --no-fund
+docker run --rm --network none --user "$(id -u):$(id -g)" --tmpfs "/storage:uid=$(id -u),gid=$(id -g)" -v "$PWD":/w -w /w node:22-alpine sh -c 'node --test --test-concurrency=1 --test-force-exit app/tests/*.test.js'
 ```
+
+There is one file per feature of the README, and `helpers/app.js` starts the app and fakes the network. `TEST_LOGS=1` shows the logs of the app. A test marked `todo` describes a known bug: remove the mark when you fix it.
 
 The optional MCP server has its own tests:
 

@@ -13,6 +13,9 @@ backups/
 # Logs
 *.log
 
+# Installed to run the tests
+node_modules/
+
 # Secrets (just in case someone drops them here)
 .env
 .env.*

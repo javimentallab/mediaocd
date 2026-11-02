@@ -141,7 +141,7 @@ and installs the dependencies from `app/package-lock.json`.
 ├── app/
 │   ├── build/              # server (Node, Express, SQLite via knex): edit the .js files directly
 │   ├── public/             # web client: index.html, the bundle main_*.js, CSS, service worker, icons
-│   ├── tests/              # tests of the app: node --test app/tests/*.test.js
+│   ├── tests/              # tests of each feature, on the real server and a throwaway database: see CONTRIBUTING.md
 │   ├── package.json        # dependencies; app/package-lock.json pins the exact tree
 │   └── package-lock.json
 ├── docker/entrypoint.sh    # PUID/PGID, auto-restore of data.db from the latest backup, start

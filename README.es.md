@@ -141,7 +141,7 @@ e instala las dependencias desde `app/package-lock.json`.
 ├── app/
 │   ├── build/              # servidor (Node, Express, SQLite con knex): se editan directamente los .js
 │   ├── public/             # cliente web: index.html, el bundle main_*.js, CSS, service worker, iconos
-│   ├── tests/              # tests de la app: node --test app/tests/*.test.js
+│   ├── tests/              # tests de cada función, con el servidor real y una base de datos desechable: consulta CONTRIBUTING.md
 │   ├── package.json        # dependencias; app/package-lock.json fija el árbol exacto
 │   └── package-lock.json
 ├── docker/entrypoint.sh    # PUID/PGID, restauración automática de data.db desde el último backup, arranque
