@@ -11,13 +11,14 @@ const USER_AGENT = 'MediaOCD/1.0 (https://github.com/javimentallab/mediaocd; Spa
 function _decodeEntities(s) {
   if (s == null) return s;
   return String(s)
-    .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
     .replace(/&#039;/g, "'")
     .replace(/&aacute;/g, 'á').replace(/&eacute;/g, 'é').replace(/&iacute;/g, 'í').replace(/&oacute;/g, 'ó').replace(/&uacute;/g, 'ú').replace(/&ntilde;/g, 'ñ')
-    .replace(/&Aacute;/g, 'Á').replace(/&Eacute;/g, 'É').replace(/&Iacute;/g, 'Í').replace(/&Oacute;/g, 'Ó').replace(/&Uacute;/g, 'Ú').replace(/&Ntilde;/g, 'Ñ');
+    .replace(/&Aacute;/g, 'Á').replace(/&Eacute;/g, 'É').replace(/&Iacute;/g, 'Í').replace(/&Oacute;/g, 'Ó').replace(/&Uacute;/g, 'Ú').replace(/&Ntilde;/g, 'Ñ')
+    // Last: decoding it first would read &amp;lt; as a <, which the page never meant.
+    .replace(/&amp;/g, '&');
 }
 
 function _parseSearchResults(html) {
@@ -207,4 +208,5 @@ class TeatroEsTheater extends _metadataProvider.MetadataProvider {
   }
 }
 exports.TeatroEsTheater = TeatroEsTheater;
+exports._decodeEntities = _decodeEntities;
 //# sourceMappingURL=teatroes.js.map

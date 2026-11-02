@@ -2015,7 +2015,7 @@ class MediaItemController {
     if (!durationSeconds) durationSeconds = await this._ytLookupDuration(videoId);
     // A duration we cannot resolve right now is not a reason to refuse the mark:
     // save it as pending and let _ytResolvePending fill it in later.
-    if (!durationSeconds) console.log('[yt-duration] ' + videoId + ' guardado sin duracion (pendiente)' + (oauthErr ? ' [OAuth: ' + oauthErr + ']' : ''));
+    if (!durationSeconds) console.log('[yt-duration] ' + videoId + ' guardado sin duracion (pendiente)' + (oauthErr ? ' [OAuth failed]' : ''));
     const entry = {
       videoId,
       channelId: body.channelId ? String(body.channelId) : null,
