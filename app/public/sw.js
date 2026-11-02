@@ -1,5 +1,5 @@
 // MediaOCD service worker — generated at build time
-const VERSION = "main_8e20e568_6cfbd0d8c5e2.js-d3f4f3f2d9a2";
+const VERSION = "main_8e20e568_b22a58554eab.js-7146eb2ea668";
 const STATIC_CACHE = 'mt-static-' + VERSION;
 const RUNTIME_CACHE = 'mt-runtime-' + VERSION;
 const IMAGE_CACHE = 'mt-images-' + VERSION;
@@ -7,7 +7,7 @@ const API_CACHE = 'mt-api-' + VERSION;
 
 const PRECACHE = [
   '/',
-  '/' + "main_8e20e568_6cfbd0d8c5e2.js",
+  '/' + "main_8e20e568_b22a58554eab.js",
   '/manifest.json',
   '/favicon.ico'
 ];

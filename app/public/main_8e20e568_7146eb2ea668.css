@@ -1272,3 +1272,15 @@ html.dark body{background-color:#121212;}
 .items-grid{width:100%!important;min-width:0!important;max-width:900px!important;justify-content:center!important;box-sizing:border-box!important;margin-left:auto!important;margin-right:auto!important}
 .items-grid .header,.items-grid .footer{width:100%!important;margin-left:0!important;margin-right:0!important;box-sizing:border-box!important;text-align:center!important}
 .items-grid .item{margin-left:10px!important;margin-right:10px!important;box-sizing:border-box!important}
+
+/* Nothing wider than a phone screen: inputs in a row can shrink, long log lines break, the backup table stacks. */
+form.flex input{min-width:0}
+.whitespace-pre-wrap{overflow-wrap:anywhere}
+@media (max-width:640px){
+.backup-table,.backup-table tbody,.backup-table tr,.backup-table td{display:block;width:100%}
+.backup-table thead{display:none}
+.backup-table tr{padding:.75rem 0;border-bottom:1px solid rgb(209 213 219)}
+.backup-table td{padding:.25rem 0!important}
+.backup-table a,.backup-table button,.backup-table label{max-width:100%;white-space:normal}
+.backup-table input[type=file]{max-width:100%}
+}
