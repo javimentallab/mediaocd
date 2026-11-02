@@ -605,7 +605,7 @@ class MediaItemController {
       try { TMDB_KEY = (JSON.parse(require('fs').readFileSync('/storage/tmdb-key.json','utf8')).apiKey || '').trim() || null; } catch(_) { TMDB_KEY = null; }
     }
     if (!TMDB_KEY) {
-      res.status(503).json({ error: 'TMDB API key no configurada. Pégala en Tokens de aplicación (Tokens TMDB) o define TMDB_API_KEY en docker-compose.yml.' });
+      res.status(503).json({ error: 'TMDB API key not configured. Paste it in Application tokens (TMDB tokens) or set TMDB_API_KEY in docker-compose.yml.' });
       return;
     }
     const results = [];
@@ -702,14 +702,14 @@ class MediaItemController {
     try {
       await new Promise((resolve, reject) => {
         req.setEncoding('utf8');
-        req.on('data', chunk => { body += chunk; if (body.length > 100 * 1024 * 1024) { reject(new Error('Archivo demasiado grande (>100MB)')); } });
+        req.on('data', chunk => { body += chunk; if (body.length > 100 * 1024 * 1024) { reject(new Error('File too large (>100MB)')); } });
         req.on('end', resolve);
         req.on('error', reject);
       });
     } catch (e) { res.status(400).json({ error: e.message }); return; }
     let data;
-    try { data = JSON.parse(body); } catch (e) { res.status(400).json({ error: 'JSON inválido: ' + e.message }); return; }
-    if (!data || !Array.isArray(data.mediaItems)) { res.status(400).json({ error: 'JSON sin campo mediaItems' }); return; }
+    try { data = JSON.parse(body); } catch (e) { res.status(400).json({ error: 'Invalid JSON: ' + e.message }); return; }
+    if (!data || !Array.isArray(data.mediaItems)) { res.status(400).json({ error: 'JSON without a mediaItems field' }); return; }
     // createMissing: when an external ID isn't found in MT, insert a minimal row so
     // its seen/ratings/progress can attach. MT's metadata refresh fills in the rest later.
     // Default true; set { createMissing: false } in the request body to disable.
@@ -992,10 +992,10 @@ class MediaItemController {
       fs.closeSync(fd);
       if (header.toString('utf8', 0, 15) !== 'SQLite format 3') {
         fs.unlinkSync(dest);
-        res.status(400).json({ error: 'El archivo subido no es una base SQLite válida' });
+        res.status(400).json({ error: 'The uploaded file is not a valid SQLite database' });
         return;
       }
-      res.json({ ok: true, size: stat.size, message: 'Archivo subido. Reinicia el contenedor para aplicar.' });
+      res.json({ ok: true, size: stat.size, message: 'File uploaded. Restart the container to apply it.' });
     } catch (e) {
       try { fs.unlinkSync(dest); } catch(_) {}
       res.status(500).json({ error: e.message });
@@ -1057,7 +1057,7 @@ class MediaItemController {
       try { TMDB_KEY = (JSON.parse(require('fs').readFileSync('/storage/tmdb-key.json','utf8')).apiKey || '').trim() || null; } catch(_) { TMDB_KEY = null; }
     }
     if (!TMDB_KEY) {
-      res.status(503).json({ error: 'TMDB API key no configurada. Pégala en Tokens de aplicación (Tokens TMDB) o define TMDB_API_KEY en docker-compose.yml.' });
+      res.status(503).json({ error: 'TMDB API key not configured. Paste it in Application tokens (TMDB tokens) or set TMDB_API_KEY in docker-compose.yml.' });
       return;
     }
     const https = require('https');
@@ -1175,11 +1175,11 @@ class MediaItemController {
     if (!(await this.jellyfinIsAdmin(req, res))) return;
     const knex = _dbconfig.Database.knex;
     const { winnerId, loserId } = req.body || {};
-    if (!winnerId || !loserId || winnerId === loserId) { res.status(400).json({ error: 'winnerId y loserId requeridos y distintos' }); return; }
+    if (!winnerId || !loserId || winnerId === loserId) { res.status(400).json({ error: 'winnerId and loserId are required and must differ' }); return; }
     const w = await knex('mediaItem').where('id', winnerId).first();
     const l = await knex('mediaItem').where('id', loserId).first();
-    if (!w || !l) { res.status(404).json({ error: 'mediaItem no encontrado' }); return; }
-    if (w.mediaType !== l.mediaType) { res.status(400).json({ error: 'mediaTypes distintos — no se puede fusionar' }); return; }
+    if (!w || !l) { res.status(404).json({ error: 'mediaItem not found' }); return; }
+    if (w.mediaType !== l.mediaType) { res.status(400).json({ error: 'Different mediaTypes: they cannot be merged' }); return; }
     const stats = { seen: 0, ratings: 0, progress: 0, listItems: 0 };
     // Helper: bulk-merge a child table — load loser/winner rows once, classify
     // each loser row as conflict (delete) or unique (re-assign), then batch
@@ -1235,7 +1235,7 @@ class MediaItemController {
     const userId = Number(req.user);
     if (!userId) { res.status(401).json({ error: 'unauthenticated' }); return; }
     const id = Number(req.params.mediaItemId);
-    if (!id) { res.status(400).json({ error: 'mediaItemId requerido' }); return; }
+    if (!id) { res.status(400).json({ error: 'mediaItemId required' }); return; }
     const knex = _dbconfig.Database.knex;
     const { metadataProviders } = require('../metadata/metadataProviders');
     const igdb = metadataProviders.get('video_game', 'IGDB');
@@ -1522,7 +1522,7 @@ class MediaItemController {
     const userId = Number(req.user);
     const file = '/storage/youtube-' + userId + '.json';
     const input = (req.body && req.body.input || '').trim();
-    if (!input) { res.status(400).json({ error: 'input requerido' }); return; }
+    if (!input) { res.status(400).json({ error: 'input required' }); return; }
     // Resolve to channel ID + name
     let channelId = null, name = null;
     const m = input.match(/(?:channel\/)?(UC[A-Za-z0-9_-]{20,24})/);
@@ -1541,10 +1541,10 @@ class MediaItemController {
           const host = u.hostname.toLowerCase();
           const allowed = host === 'youtube.com' || host === 'www.youtube.com' || host === 'm.youtube.com' || host === 'youtu.be';
           if (!allowed || u.protocol !== 'https:') {
-            res.status(400).json({ error: 'Solo se aceptan URLs de youtube.com / youtu.be' }); return;
+            res.status(400).json({ error: 'Only youtube.com and youtu.be addresses are accepted' }); return;
           }
         } catch (_) {
-          res.status(400).json({ error: 'URL inválida' }); return;
+          res.status(400).json({ error: 'Invalid URL' }); return;
         }
       }
       let fetchStatus = null;
@@ -1563,10 +1563,10 @@ class MediaItemController {
         if (tm) name = tm[1];
       } catch (_) {}
       if (!channelId && fetchStatus === 404) {
-        res.status(404).json({ error: 'El canal o el handle no existe en YouTube (404). Comprueba el @handle o pega el ID UCxxxx.' }); return;
+        res.status(404).json({ error: 'That channel or handle does not exist on YouTube (404). Check the @handle or paste the UCxxxx id.' }); return;
       }
     }
-    if (!channelId) { res.status(400).json({ error: 'No se pudo resolver el canal. Pega el ID UCxxxx o la URL completa.' }); return; }
+    if (!channelId) { res.status(400).json({ error: 'The channel could not be found. Paste the UCxxxx id or the full address.' }); return; }
     if (!name) {
       // Fetch RSS to get channel title
       try {
@@ -1985,7 +1985,7 @@ class MediaItemController {
     const file = '/storage/youtube-' + userId + '.json';
     const body = req.body || {};
     const videoId = String(body.videoId || '').trim();
-    if (!videoId || !/^[A-Za-z0-9_-]{11}$/.test(videoId)) { res.status(400).json({ error: 'videoId requerido (11 chars)' }); return; }
+    if (!videoId || !/^[A-Za-z0-9_-]{11}$/.test(videoId)) { res.status(400).json({ error: 'videoId required (11 characters)' }); return; }
     let data = { channels: [], watched: [] };
     try { data = JSON.parse(await fs.readFile(file, 'utf8')); } catch (_) {}
     if (!Array.isArray(data.watched)) data.watched = [];
@@ -2007,7 +2007,7 @@ class MediaItemController {
       const j = await r.json();
       if (j.error) throw new Error('YouTube API: ' + (j.error.message || JSON.stringify(j.error)));
       const item = (j.items || [])[0];
-      if (!item) throw new Error('video no encontrado en YouTube');
+      if (!item) throw new Error('video not found on YouTube');
       durationSeconds = this._ytParseDuration(item.contentDetails && item.contentDetails.duration);
     } catch (e) {
       oauthErr = e.message;
@@ -2044,13 +2044,13 @@ class MediaItemController {
     if (!userId) { res.status(401).json({ error: 'unauthenticated' }); return; }
     const file = '/storage/youtube-' + userId + '.json';
     const videoId = String(req.params.videoId || '').trim();
-    if (!videoId) { res.status(400).json({ error: 'videoId requerido' }); return; }
+    if (!videoId) { res.status(400).json({ error: 'videoId required' }); return; }
     let data = { channels: [], watched: [] };
     try { data = JSON.parse(await fs.readFile(file, 'utf8')); } catch (_) {}
     if (!Array.isArray(data.watched)) data.watched = [];
     const before = data.watched.length;
     data.watched = data.watched.filter(w => w.videoId !== videoId);
-    if (data.watched.length === before) { res.status(404).json({ error: 'no marcado' }); return; }
+    if (data.watched.length === before) { res.status(404).json({ error: 'not marked' }); return; }
     try { { const _wTmp = file + '.tmp.' + process.pid; await fs.writeFile(_wTmp, JSON.stringify(data, null, 2)); await fs.rename(_wTmp, file); } }
     catch (e) { res.status(500).json({ error: e.message }); return; }
     res.json({ ok: true });
@@ -2071,10 +2071,10 @@ class MediaItemController {
     const userId = Number(req.user);
     if (!userId) { res.status(401).json({ error: 'unauthenticated' }); return; }
     const mediaItemId = Number(req.params.mediaItemId);
-    if (!mediaItemId) { res.status(400).json({ error: 'mediaItemId requerido' }); return; }
+    if (!mediaItemId) { res.status(400).json({ error: 'mediaItemId required' }); return; }
     const knex = _dbconfig.Database.knex;
     const mi = await knex('mediaItem').where('id', mediaItemId).first('id');
-    if (!mi) { res.status(404).json({ error: 'mediaItem no encontrado' }); return; }
+    if (!mi) { res.status(404).json({ error: 'mediaItem not found' }); return; }
     await knex.raw('INSERT OR IGNORE INTO abandoned (userId, mediaItemId, date) VALUES (?, ?, ?)', [userId, mediaItemId, Date.now()]);
     res.json({ ok: true });
   });
@@ -2082,7 +2082,7 @@ class MediaItemController {
     const userId = Number(req.user);
     if (!userId) { res.status(401).json({ error: 'unauthenticated' }); return; }
     const mediaItemId = Number(req.params.mediaItemId);
-    if (!mediaItemId) { res.status(400).json({ error: 'mediaItemId requerido' }); return; }
+    if (!mediaItemId) { res.status(400).json({ error: 'mediaItemId required' }); return; }
     const knex = _dbconfig.Database.knex;
     await knex('abandoned').where({ userId, mediaItemId }).delete();
     res.json({ ok: true });
@@ -2098,7 +2098,7 @@ class MediaItemController {
     const userId = Number(req.user);
     const mediaItemId = Number(req.params.mediaItemId);
     if (!userId) { res.status(401).json({ error: 'unauthenticated' }); return; }
-    if (!mediaItemId) { res.status(400).json({ error: 'mediaItemId requerido' }); return; }
+    if (!mediaItemId) { res.status(400).json({ error: 'mediaItemId required' }); return; }
     const knex = _dbconfig.Database.knex;
     const existing = await knex('activelyInProgress').where({ userId, mediaItemId }).first();
     if (existing) {
@@ -2112,7 +2112,7 @@ class MediaItemController {
     const userId = Number(req.user);
     const mediaItemId = Number(req.params.mediaItemId);
     if (!userId) { res.status(401).json({ error: 'unauthenticated' }); return; }
-    if (!mediaItemId) { res.status(400).json({ error: 'mediaItemId requerido' }); return; }
+    if (!mediaItemId) { res.status(400).json({ error: 'mediaItemId required' }); return; }
     const knex = _dbconfig.Database.knex;
     const existing = await knex('activelyInProgress').where({ userId, mediaItemId }).first();
     if (existing) {
@@ -2134,7 +2134,7 @@ class MediaItemController {
     const userId = Number(req.user);
     const mediaItemId = Number(req.params.mediaItemId);
     if (!userId) { res.status(401).json({ error: 'unauthenticated' }); return; }
-    if (!mediaItemId) { res.status(400).json({ error: 'mediaItemId requerido' }); return; }
+    if (!mediaItemId) { res.status(400).json({ error: 'mediaItemId required' }); return; }
     const knex = _dbconfig.Database.knex;
     const [ab, aip, sw] = await Promise.all([
       knex('abandoned').where({ userId, mediaItemId }).first(),
@@ -2152,7 +2152,7 @@ class MediaItemController {
     const userId = Number(req.user);
     const mediaItemId = Number(req.params.mediaItemId);
     if (!userId) { res.status(401).json({ error: 'unauthenticated' }); return; }
-    if (!mediaItemId) { res.status(400).json({ error: 'mediaItemId requerido' }); return; }
+    if (!mediaItemId) { res.status(400).json({ error: 'mediaItemId required' }); return; }
     const n = await _dbconfig.Database.knex('seen').where({ userId, mediaItemId, kind: 'watched' }).delete();
     res.json({ ok: true, removed: n });
   });
@@ -2204,7 +2204,7 @@ class MediaItemController {
       return;
     }
     if (!/^[a-f0-9]{20,}$/i.test(apiKey)) {
-      res.status(400).json({ error: 'Formato de TMDB API key inválido (se esperan ≥20 hex chars).' });
+      res.status(400).json({ error: 'Invalid TMDB API key format (at least 20 hex characters expected).' });
       return;
     }
     fs.writeFileSync(file, JSON.stringify({ apiKey }, null, 2));
