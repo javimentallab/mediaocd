@@ -849,14 +849,20 @@ class MediaItemController {
       let skipped = 0;
       if (valid.length > 0) {
         const miIds = [...new Set(valid.map(v => v.newMI))];
-        const existing = await knex('seen').where('userId', userId).whereIn('mediaItemId', miIds).select('mediaItemId','episodeId','date');
+        const existing = await knex('seen').where('userId', userId).whereIn('mediaItemId', miIds).select('mediaItemId','episodeId','date','kind');
+        // The same viewing is the same item, episode, date and kind. An old export has no kind:
+        // it stays the same viewing as anything on that date, and what is new counts as played.
         const existingSet = new Set(existing.map(e => e.mediaItemId+'|'+(e.episodeId||'')+'|'+e.date));
+        const existingWithKind = new Set(existing.map(e => e.mediaItemId+'|'+(e.episodeId||'')+'|'+e.date+'|'+e.kind));
         const toInsert = [];
         for (const v of valid) {
           const key = v.newMI+'|'+(v.newEp||'')+'|'+v.s.date;
-          if (existingSet.has(key)) { skipped++; continue; }
+          const hasKind = v.s.kind === 'watched' || v.s.kind === 'played';
+          if (hasKind ? existingWithKind.has(key+'|'+v.s.kind) : existingSet.has(key)) { skipped++; continue; }
+          const kind = hasKind ? v.s.kind : 'played';
           existingSet.add(key);
-          toInsert.push({ userId, mediaItemId: v.newMI, episodeId: v.newEp || null, date: v.s.date, duration: v.s.duration || null });
+          existingWithKind.add(key+'|'+kind);
+          toInsert.push({ userId, mediaItemId: v.newMI, episodeId: v.newEp || null, date: v.s.date, duration: v.s.duration || null, kind });
         }
         if (toInsert.length) await _bulkInsert('seen', toInsert);
         stats.seenImported = toInsert.length;

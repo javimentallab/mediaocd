@@ -84,13 +84,54 @@ test('the JSON export brings back what was lost, matched by external id', async 
   assert.strictEqual((await app.knex('userRating').where('mediaItemId', id)).length, 1);
 });
 
-test('an import keeps whether something was watched or played', { todo: 'BUG: importJson does not copy seen.kind, so everything comes back as played' }, async () => {
+test('an import keeps whether something was watched or played', async () => {
   const id = await app.item({ title: 'Watched, not played', mediaType: 'video_game', igdbId: 250 });
   await app.knex('seen').insert({ userId: app.admin.id, mediaItemId: id, date: 1700000000001, kind: 'watched' });
   const exported = await app.api('GET', '/api/backup/export-json');
   await app.knex('seen').where('mediaItemId', id).delete();
   await app.api('POST', '/api/backup/import', { raw: exported.text, headers: { 'Content-Type': 'application/octet-stream' } });
   assert.strictEqual((await app.knex('seen').where('mediaItemId', id).first()).kind, 'watched');
+});
+
+const octetStream = { 'Content-Type': 'application/octet-stream' };
+const exportWith = (tmdbId, seen) => JSON.stringify({
+  mediaItems: [{ id: 1, title: 'From an export', mediaType: 'movie', tmdbId }],
+  seen: seen.map((s) => ({ mediaItemId: 1, ...s })),
+});
+const kindsOf = async (tmdbId) => {
+  const item = await app.knex('mediaItem').where({ tmdbId }).first();
+  const rows = await app.knex('seen').where('mediaItemId', item.id).orderBy('kind');
+  return rows.map((row) => row.kind);
+};
+
+test('an old export, from before there were kinds, still imports, as played', async () => {
+  const res = await app.api('POST', '/api/backup/import', { raw: exportWith(260, [{ date: 1600000000000 }]), headers: octetStream });
+  assert.strictEqual(res.status, 200, res.text);
+  assert.strictEqual(res.json.seenImported, 1);
+  assert.deepStrictEqual(await kindsOf(260), ['played']);
+});
+
+test('an old export does not repeat a viewing that is already there as watched', async () => {
+  const date = 1600000000001;
+  await app.api('POST', '/api/backup/import', { raw: exportWith(261, [{ date, kind: 'watched' }]), headers: octetStream });
+  const res = await app.api('POST', '/api/backup/import', { raw: exportWith(261, [{ date }]), headers: octetStream });
+  assert.strictEqual(res.json.seenSkipped, 1);
+  assert.deepStrictEqual(await kindsOf(261), ['watched']);
+});
+
+test('played and watched on the same date are two different things', async () => {
+  const date = 1600000000002;
+  const res = await app.api('POST', '/api/backup/import', {
+    raw: exportWith(262, [{ date, kind: 'played' }, { date, kind: 'watched' }]),
+    headers: octetStream,
+  });
+  assert.strictEqual(res.json.seenImported, 2);
+  assert.deepStrictEqual(await kindsOf(262), ['played', 'watched']);
+});
+
+test('an unknown kind in an export counts as played', async () => {
+  await app.api('POST', '/api/backup/import', { raw: exportWith(263, [{ date: 1600000000003, kind: 'nonsense' }]), headers: octetStream });
+  assert.deepStrictEqual(await kindsOf(263), ['played']);
 });
 
 test('an import creates what is missing, unless told not to', async () => {
