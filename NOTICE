@@ -115,8 +115,7 @@ Native library under the LGPL, used by sharp:
 
 @img/sharp-wasm32 0.35.5 - Apache-2.0 AND LGPL-3.0-or-later AND MIT
   WebAssembly build of sharp and libvips, an optional package that npm installs next to the
-  native ones. sharp only falls back to it when no native build can be loaded. The same
-  terms as above apply to its LGPL part.
+  native ones. The same terms as above apply to its LGPL part.
 
 Direct dependencies (app/package.json):
 
