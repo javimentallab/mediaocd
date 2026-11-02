@@ -18,6 +18,12 @@ The server is in `app/build` and the web client in `app/public`, which is a buil
 docker build -t mediaocd .
 ```
 
+The tests of the app need nothing installed:
+
+```sh
+node --test app/tests/*.test.js
+```
+
 The optional MCP server has its own tests:
 
 ```sh

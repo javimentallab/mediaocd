@@ -8,6 +8,7 @@ var _typescriptRoutesToOpenapiServer = require("typescript-routes-to-openapi-ser
 var _mediaItem = require("../repository/mediaItem");
 var _updateMetadata = require("../updateMetadata");
 var _dbconfig = require("../dbconfig");
+var _letterboxd = require("../letterboxd");
 /**
  * @openapi_tags MediaItem
  */
@@ -950,8 +951,7 @@ class MediaItemController {
       const key = (r.title || '') + '|' + (r.year || '');
       const isRewatch = seenTitles.has(key);
       seenTitles.set(key, (seenTitles.get(key) || 0) + 1);
-      // Letterboxd rating is 0.5–5, and ratings are stored as 1–5 stars: no scaling.
-      const lbRating = r.rating || '';
+      const lbRating = (0, _letterboxd.letterboxdRating)(r.rating);
       lines.push([
         dateStr,
         csvEscape(r.title),
