@@ -2,6 +2,12 @@
 
 Notable changes to MediaOCD. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/).
 
+## [2.1.1] - 2026-11-03
+
+### Security
+
+- **`react-router` in the interface bundle: CVE-2025-68470 and CVE-2026-53669** (moderate, open redirect). A path with doubled or mixed slashes, such as `//example.com` or `/\example.com`, could send the browser to another site. MediaOCD uses hash history and no path takes outside data, so no way to exploit them was found, but they are now closed: every path the router resolves goes through the normalisation of the upstream fix. The bundle stays on 6.3.0, as upgrading needs React 18 and it has no source to rebuild, so a scanner that goes by the version alone will still list them.
+
 ## [2.1.0] - 2026-11-03
 
 ### Upgrading from 2.0.0
@@ -118,5 +124,6 @@ First release under the name MediaOCD (formerly MediaTOC), now a standalone proj
 - `npm`, `npx` and `corepack` removed from the final image, as they carried their own HIGH advisories.
 - CI: Trivy scans the image and the repository for vulnerabilities, secrets and misconfigurations, and CodeQL analyzes the code, on every push and every week. The tests run on every push, and another workflow builds the image, starts it and checks that it answers. Every GitHub Action is pinned by commit.
 
+[2.1.1]: https://github.com/javimentallab/mediaocd/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/javimentallab/mediaocd/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/javimentallab/mediaocd/compare/v1.1.3...v2.0.0

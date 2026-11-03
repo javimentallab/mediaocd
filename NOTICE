@@ -6,7 +6,7 @@ That file also keeps the copyright notice of the earlier MIT-licensed code this 
 grew from, as that license requires. contrib/mcp-server has its own list in
 contrib/mcp-server/NOTICE.
 
-Versions are those of MediaOCD 2.1.0. app/package-lock.json pins the exact tree of the
+Versions are those of MediaOCD 2.1.1. app/package-lock.json pins the exact tree of the
 server dependencies. The full text of the MIT and Apache-2.0 licenses is at the end of
 this file.
 
@@ -25,6 +25,7 @@ React 17.0.2, React DOM 17.0.2, react-is 17.0.2 and 16.13.1, scheduler 0.20.2 - 
 React Router 6.3.0, React Router DOM 6.3.0 - MIT
   Copyright (c) Remix Software Inc.
   https://github.com/remix-run/react-router
+  Carries the fixes for CVE-2025-68470 and CVE-2026-53669 by hand, inside main_*.js.
 
 React Query 3 - MIT
   Copyright (c) 2019 Tanner Linsley
