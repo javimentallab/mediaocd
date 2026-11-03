@@ -6,7 +6,7 @@ That file also keeps the copyright notice of the earlier MIT-licensed code this 
 grew from, as that license requires. contrib/mcp-server has its own list in
 contrib/mcp-server/NOTICE.
 
-Versions are those of MediaOCD 2.1.1. app/package-lock.json pins the exact tree of the
+Versions are those of MediaOCD 2.1.2. app/package-lock.json pins the exact tree of the
 server dependencies. The full text of the MIT and Apache-2.0 licenses is at the end of
 this file.
 
@@ -173,20 +173,6 @@ node:22.23.4-alpine3.23 - Node.js (MIT, with its bundled components) on Alpine L
   https://hub.docker.com/_/node
 
 
-Used only for development (devDependencies, not installed in the image)
------------------------------------------------------------------------
-
-All are permissive. The ones worth a note:
-
-cli-table 0.3.6 - MIT
-  No "license" field and no license file; its README says "The MIT License",
-  Copyright (c) 2010 LearnBoost.
-exit 0.1.2, fuzzaldrin 2.1.0, node-gettext 3.0.1 - MIT
-  Older "licenses" field and a license file.
-caniuse-lite - CC-BY-4.0
-  Browser support data, used by the build tools.
-
-
 Online services
 ---------------
 
@@ -201,8 +187,9 @@ IGDB - game metadata and time to beat
 Open Library - book metadata
 Audible - audiobook metadata and chapter counts
 Wikidata (CC0), Wikipedia (CC BY-SA) and teatro.es (CDT/INAEM) - theatre metadata
+Wikipedia - spelling suggestions, only when a catalogue finds nothing for a search
 FilmAffinity - rating of movies and TV shows on the details page
-Metacritic - Metascore of games on the details page
+Metacritic - Metascore and user score of games on the details page
 Rotten Tomatoes - a link to search a movie or TV show; the icon is a generic tomato, not their logo
 YouTube - channel feeds, video durations and, with Google OAuth, subscriptions
 Jellyfin - your own server (GPL-2.0), reached only through its HTTP API

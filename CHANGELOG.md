@@ -2,6 +2,16 @@
 
 Notable changes to MediaOCD. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/).
 
+## [2.1.2] - 2026-11-03
+
+### Removed
+
+- **41 development tools** (Jest, Babel, ESLint, TypeScript, swagger-typescript-api and others) left from when the app was built from source. Nothing used them: the tests run on the test runner of Node, and the image never installed them. The lockfile goes from 1071 packages to 282, and no package of the image changes.
+
+### Security
+
+- That also takes out the advisories those tools carried, none of which reached the image: deepmerge (CVE-2026-93753), glob (CVE-2026-118773), js-yaml (CVE-2025-64718, CVE-2026-53550, CVE-2026-59869, CVE-2026-84375, GHSA-5p4m-2wfm-xmqj), micromatch (CVE-2024-4067), minimatch (CVE-2026-118764), nanoid 3.3.4 (CVE-2024-55565, CVE-2026-67213, CVE-2026-67214, CVE-2026-73086), swagger-typescript-api (CVE-2026-54660, CVE-2026-54661, CVE-2026-54662, CVE-2026-54663, CVE-2026-54664, CVE-2026-54666), tmp (CVE-2025-54798, CVE-2026-44705) and uuid (CVE-2026-41907).
+
 ## [2.1.1] - 2026-11-03
 
 ### Security
@@ -124,6 +134,7 @@ First release under the name MediaOCD (formerly MediaTOC), now a standalone proj
 - `npm`, `npx` and `corepack` removed from the final image, as they carried their own HIGH advisories.
 - CI: Trivy scans the image and the repository for vulnerabilities, secrets and misconfigurations, and CodeQL analyzes the code, on every push and every week. The tests run on every push, and another workflow builds the image, starts it and checks that it answers. Every GitHub Action is pinned by commit.
 
+[2.1.2]: https://github.com/javimentallab/mediaocd/compare/v2.1.1...v2.1.2
 [2.1.1]: https://github.com/javimentallab/mediaocd/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/javimentallab/mediaocd/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/javimentallab/mediaocd/compare/v1.1.3...v2.0.0
