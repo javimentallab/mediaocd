@@ -16,6 +16,13 @@ const getPosterUrl = (path, size = 't_original') => {
 class IGDB extends _metadataProvider.MetadataProvider {
   name = 'IGDB';
   mediaType = 'video_game';
+  async titles(mediaItem) {
+    if (!_globalSettings.GlobalConfiguration.configuration.igdbClientId) return null;
+    if (!mediaItem.igdbId) return [];
+    const res = await this.get('games', `fields name,alternative_names.name,game_localizations.name; where id = ${Number(mediaItem.igdbId)};`);
+    const game = (res && res[0]) || {};
+    return [...(game.alternative_names || []), ...(game.game_localizations || [])].map(t => t.name).filter(Boolean);
+  }
   async search(query) {
     const result = await this.searchGames(query);
     return Promise.all(result.map(item => this.mapGame(item)));

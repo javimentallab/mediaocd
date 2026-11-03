@@ -29,14 +29,16 @@ Un gestor pensado para **completistas**, con el castellano como primer idioma y 
 - **Verbos de consumo por medio**, no solo «visto»: jugado / visto / leído / escuchado; el teatro cuenta como visto. Un mismo elemento puede tener varios.
 - **Página «En proceso» que se ordena sola**: todo lo que estás viendo, leyendo, jugando o escuchando, de cualquier tipo. Las series en emisión se quedan mientras vas al día, la tarjeta muestra el siguiente capítulo (incluso uno que hayas visto antes de su estreno) y la serie sale sola cuando termina su temporada o la serie entera. Lo abandonado tiene su propia lista. Puedes hacerla tu página de inicio.
 - **Progreso en unidades reales**: horas y minutos para películas, juegos, teatro y capítulos; páginas para libros; posición para audiolibros, con un indicador de capítulo sobre las barras de lectura y escucha y el número real de capítulos de los audiolibros de Audible.
+- **Un icono verde en cada carátula**: enseña el estado del elemento y abre un único diálogo para todo lo de su progreso, así la ficha queda limpia. Lo que está en proceso siempre está también en pendientes.
 - **Integración con Jellyfin en los dos sentidos**: marca como descargado lo que aparece en tu biblioteca de Jellyfin, abre enlaces directos «Reproducir en Jellyfin» y sincroniza de vuelta lo que ves allí.
 - **YouTube como tipo de contenido de primera**: suscríbete a canales, marca vídeos como vistos y consulta el feed reciente, con una caché persistente que aguanta las caídas del RSS de YouTube.
 - **Teatro con metadatos serios**: SPARQL de Wikidata para las obras canónicas y scraping de teatro.es (CDT/INAEM, España) para los montajes contemporáneos.
-- **Lista de seguimiento ordenada por fecha de alta**; las series terminadas salen solas.
-- **Notas externas en la ficha**: nota de FilmAffinity en películas y series y Metascore de Metacritic en juegos, junto a los logos de IMDb/TMDB/IGDB y guardadas en caché en el servidor.
+- **Pendientes ordenados por fecha de alta**; las series terminadas salen solas.
+- **Un buscador que perdona**, por título o por autor: mayúsculas y minúsculas, acentos, erratas, palabras juntas y el título en cualquier idioma, con las traducciones de TMDB, IGDB y Open Library, que se piden poco a poco (`TITLES_WARM=0` lo desactiva). Si un catálogo no encuentra nada, vuelve a buscar con la palabra corregida, a partir de tu biblioteca o de lo que sugiere Wikipedia: solo entonces se envía a Wikipedia lo que has escrito (`SEARCH_SPELLCHECK=0` lo desactiva).
+- **Notas externas en la ficha**: nota de FilmAffinity en películas y series y Metascore de Metacritic en juegos (la nota de usuarios si no hay Metascore), junto a los logos de IMDb/TMDB/IGDB y guardadas en caché en el servidor.
 - **Detección de duplicados** y herramientas de fusión que no pierden vistos, puntuaciones ni listas.
 - **Copia de seguridad y restauración completas**, con restauración automática si falta `data.db`, además de exportación a JSON y a CSV de Letterboxd.
-- **Funciona con asistentes de IA (MCP)**: el servidor opcional de [`contrib/mcp-server`](contrib/mcp-server/README.es.md) permite a un asistente buscar en tu biblioteca, marcar cosas como vistas y gestionar la lista de seguimiento y las puntuaciones.
+- **Funciona con asistentes de IA (MCP)**: el servidor opcional de [`contrib/mcp-server`](contrib/mcp-server/README.es.md) permite a un asistente buscar en tu biblioteca, marcar cosas como vistas y gestionar los pendientes y las puntuaciones.
 - **16 idiomas de interfaz**: inglés, castellano, portugués, francés, alemán, italiano, neerlandés, polaco, ruso, ucraniano, danés, chino, japonés, coreano, tailandés e hindi. Sigue el idioma del navegador; *Ajustes → Configuración → Idioma de la interfaz* fuerza uno.
 
 Pensado para vivir en tu propia infraestructura junto a Jellyfin, qBittorrent, Home Assistant y lo que tengas.
@@ -58,7 +60,7 @@ docker compose up -d mediaocd
 
 Abre `http://localhost:7481`: el primer usuario que se registra es el administrador.
 
-**Los tokens y credenciales** se gestionan desde `Ajustes → Tokens de aplicación`:
+**Los tokens y credenciales** se gestionan desde `Ajustes → Servicios y avisos`:
 - IGDB (obligatorio para videojuegos)
 - Clave de API de TMDB (recomendada para «Dónde ver» y la duración de los capítulos: pégala en la interfaz; se guarda en `/storage/tmdb-key.json` con modo 0600)
 - Jellyfin (URL + clave de API)
@@ -117,7 +119,7 @@ Los requisitos de estructura, las variables de entorno y las trampas están en
 
 ## Complemento: `contrib/mcp-server`
 
-Servidor [MCP](https://modelcontextprotocol.io) opcional con el que un asistente de IA puede buscar en tu biblioteca, marcar cosas como vistas y gestionar la lista de seguimiento y las puntuaciones: consulta [`contrib/mcp-server/README.es.md`](contrib/mcp-server/README.es.md).
+Servidor [MCP](https://modelcontextprotocol.io) opcional con el que un asistente de IA puede buscar en tu biblioteca, marcar cosas como vistas y gestionar los pendientes y las puntuaciones: consulta [`contrib/mcp-server/README.es.md`](contrib/mcp-server/README.es.md).
 
 ## Copias de seguridad desde el host
 

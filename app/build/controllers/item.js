@@ -315,6 +315,8 @@ const _mcInflight = new Map();
 function _mcLoadCache() {
   if (_mcCache) return _mcCache;
   try { _mcCache = JSON.parse(require('fs').readFileSync(_MC_CACHE_PATH, 'utf8')) || {}; } catch (_) { _mcCache = {}; }
+  // Lo guardado sin nota antes de mirar la de usuarios y los juegos sin fecha se vuelve a buscar.
+  for (const e of Object.values(_mcCache)) if (!e.v && typeof e.score !== 'number') e.exp = 0;
   return _mcCache;
 }
 function _mcSaveCache() {
@@ -371,6 +373,28 @@ async function _mcSearch(title) {
   const d = JSON.parse(r.body);
   return (d.data && d.data.items) || [];
 }
+// Nota de usuarios (0-10), para los juegos sin nota de criticos. Sin ella no pasa nada.
+async function _mcUserScore(slug) {
+  const url = () => 'https://backend.metacritic.com/reviews/metacritic/user/games/' + encodeURIComponent(slug)
+    + '/stats/web?apiKey=' + _mcKey;
+  if (Date.now() < _mcBlockedUntil) return null;
+  try {
+    let r = await _mcGet(url());
+    if (r.status === 401 || r.status === 403) {
+      await _mcRefreshKey();
+      r = await _mcGet(url());
+    }
+    if (r.status === 429) {
+      _mcBlockedUntil = Date.now() + 10 * 60 * 1000;
+      return null;
+    }
+    if (r.status !== 200) return null;
+    const it = (JSON.parse(r.body).data || {}).item || {};
+    return Number(it.score) > 0 ? Number(it.score) : null;
+  } catch (_) {
+    return null;
+  }
+}
 function _mcNorm(s) {
   return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
     .replace(/&/g, ' and ').replace(/['\u2019`]/g, '').replace(/[^a-z0-9]+/g, ' ').trim()
@@ -382,29 +406,36 @@ function _mcYear(x) {
 }
 function _mcPick(item, items) {
   const year = item.releaseDate ? Number(String(item.releaseDate).slice(0, 4)) : null;
-  if (!year) return null;
   const want = _mcNorm(item.title);
   const same = items.filter((x) => x.typeId === 13 && x.slug && _mcNorm(x.title) === want);
   if (!same.length) return null;
+  // Sin fecha aqui: vale si el titulo es unico y alli tampoco tiene fecha, o es muy reciente.
+  if (!year) {
+    if (same.length !== 1) return null;
+    const y = _mcYear(same[0]);
+    return y == null || y >= new Date().getFullYear() - 1 ? same[0] : null;
+  }
   const close = same
     .map((x) => ({ x, d: _mcYear(x) == null ? null : Math.abs(_mcYear(x) - year) }))
     .filter((c) => c.d != null && c.d <= 3)
     .sort((a, b) => a.d - b.d);
   if (close.length === 1 || (close.length > 1 && close[0].d < close[1].d)) return close[0].x;
   if (close.length) return null;
-  const unreleased = new Date(item.releaseDate) > new Date();
-  if (unreleased && same.length === 1 && _mcYear(same[0]) == null) return same[0];
+  // Sin fecha alli (2097 en Metacritic): no hay ano que comparar, vale si el titulo es unico.
+  if (same.length === 1 && _mcYear(same[0]) == null) return same[0];
   return null;
 }
 function _mcOut(e) {
   if (!e || !e.slug) return { found: false };
-  return {
+  const out = {
     found: true,
     url: 'https://www.metacritic.com/game/' + e.slug + '/',
     score: e.score,
     title: e.title,
     year: e.year,
   };
+  if (typeof e.score !== 'number' && typeof e.userScore === 'number') out.userScore = e.userScore;
+  return out;
 }
 function _mcCacheKey(item) {
   return 'g:' + (Number(item.igdbId) > 0 ? Number(item.igdbId) : 'id' + item.id);
@@ -435,15 +466,16 @@ function _mcLookup(item, opts) {
           if (pick) break;
         }
         if (!pick) {
-          cache[key] = { exp: now + _mcTtl(item, false), slug: null };
+          cache[key] = { v: 2, exp: now + _mcTtl(item, false), slug: null };
           _mcSaveCache();
           return { found: false };
         }
         const raw = pick.criticScoreSummary && pick.criticScoreSummary.score;
         const score = Number(raw) > 0 ? Math.round(Number(raw)) : null;
+        const userScore = score == null ? await _mcUserScore(pick.slug) : null;
         cache[key] = {
-          exp: now + _mcTtl(item, true),
-          at: now, slug: pick.slug, score, title: pick.title || null, year: _mcYear(pick),
+          v: 2, exp: now + _mcTtl(item, true),
+          at: now, slug: pick.slug, score, userScore, title: pick.title || null, year: _mcYear(pick),
         };
         _mcSaveCache();
         return _mcOut(cache[key]);
@@ -456,7 +488,7 @@ function _mcLookup(item, opts) {
     const mine = p;
     p.then(() => { if (_mcInflight.get(key) === mine) _mcInflight.delete(key); });
   }
-  if (hit && hit.slug && !(opts && opts.wait)) return Promise.resolve(Object.assign(_mcOut(hit), { stale: true }));
+  if (hit && hit.slug && hit.exp !== 0 && !(opts && opts.wait)) return Promise.resolve(Object.assign(_mcOut(hit), { stale: true }));
   return p;
 }
 

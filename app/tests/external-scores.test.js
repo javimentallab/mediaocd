@@ -118,6 +118,50 @@ test('titles match despite roman numerals, accents and punctuation, and only at 
   remove();
 });
 
+test('without a Metascore, the user score of Metacritic takes its place', async () => {
+  const removers = [
+    onRequest(metacriticSearch, { data: { items: [game('Small game', 2024, 0, 'small-game')] } }),
+    onRequest('backend.metacritic.com/reviews/metacritic/user/games/small-game/', { data: { item: { score: 6.9, reviewCount: 22 } } }),
+  ];
+  const id = await app.item({ title: 'Small game', mediaType: 'video_game', igdbId: 40, releaseDate: '2024-03-03' });
+  const { json } = await metacritic(id);
+  removers.forEach((remove) => remove());
+  assert.strictEqual(json.found, true);
+  assert.strictEqual(json.score, null);
+  assert.strictEqual(json.userScore, 6.9);
+});
+
+test('with no user score either, the game is found without a number', async () => {
+  const removers = [
+    onRequest(metacriticSearch, { data: { items: [game('Unrated game', 2024, null, 'unrated-game')] } }),
+    onRequest('backend.metacritic.com/reviews/metacritic/user/games/unrated-game/', { status: 404, body: 'not found' }),
+  ];
+  const id = await app.item({ title: 'Unrated game', mediaType: 'video_game', igdbId: 41, releaseDate: '2024-03-03' });
+  const { json } = await metacritic(id);
+  removers.forEach((remove) => remove());
+  assert.strictEqual(json.found, true);
+  assert.strictEqual(json.score, null);
+  assert.strictEqual(json.userScore, undefined);
+});
+
+test('with no date on one side, only a single title without a date or a recent one matches', async () => {
+  const removers = [
+    onRequest(/search\/Released(%20| )game/, { data: { items: [game('Released game', 2097, 70, 'released-game')] } }),
+    onRequest(/search\/Undated(%20| )game/, { data: { items: [game('Undated game', 2097, 71, 'undated-game')] } }),
+    onRequest(/search\/Old(%20| )title/, { data: { items: [game('Old title', 2005, 72, 'old-title')] } }),
+    onRequest(/search\/Twin(%20| )title/, { data: { items: [game('Twin title', 2097, 73, 'twin-1'), game('Twin title', 2097, 74, 'twin-2')] } }),
+  ];
+  const released = await app.item({ title: 'Released game', mediaType: 'video_game', igdbId: 42, releaseDate: '2013-01-01' });
+  assert.strictEqual((await metacritic(released)).json.score, 70);
+  const undated = await app.item({ title: 'Undated game', mediaType: 'video_game', igdbId: 43 });
+  assert.strictEqual((await metacritic(undated)).json.score, 71);
+  const old = await app.item({ title: 'Old title', mediaType: 'video_game', igdbId: 44 });
+  assert.deepStrictEqual((await metacritic(old)).json, { found: false });
+  const twin = await app.item({ title: 'Twin title', mediaType: 'video_game', igdbId: 45, releaseDate: '2020-01-01' });
+  assert.deepStrictEqual((await metacritic(twin)).json, { found: false });
+  removers.forEach((remove) => remove());
+});
+
 test('Metacritic scores are only for games', async () => {
   const id = await app.item({ title: 'A movie', mediaType: 'movie' });
   assert.deepStrictEqual((await metacritic(id)).json, { found: false });

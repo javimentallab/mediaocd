@@ -4,6 +4,32 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.SeenController = void 0;
+// mediaocd:in-progress-implies-pending
+// A started show with episodes left is in progress, and what is in progress is also pending.
+// Not if it was abandoned or taken out of In progress by hand.
+async function _pendingIfStarted(userId, mediaItemId) {
+  try {
+    const knex = _dbconfig.Database.knex;
+    const item = await knex('mediaItem').select('mediaType').where('id', mediaItemId).first();
+    if (!item || item.mediaType !== 'tv') return;
+    if (await knex('abandoned').where({ userId, mediaItemId }).first()) return;
+    if (await knex('activelyInProgress').where({ userId, mediaItemId, excluded: true }).first()) return;
+    if (!(await knex('seen').where({ userId, mediaItemId }).whereNotNull('episodeId').first())) return;
+    const left = await knex('episode')
+      .where('episode.tvShowId', mediaItemId)
+      .where('episode.isSpecialEpisode', false)
+      .whereNotNull('episode.releaseDate')
+      .where('episode.releaseDate', '<=', new Date().toISOString().slice(0, 10))
+      .whereNotExists(function () {
+        this.from('seen').whereRaw('"seen"."episodeId" = "episode"."id"').where('seen.userId', userId);
+      })
+      .first();
+    if (!left) return;
+    await _listItemRepository.listItemRepository.addItem({ userId, mediaItemId, watchlist: true });
+  } catch (e) {
+    _logger.logger.debug('pending if started: ' + e.message);
+  }
+}
 async function _removeFromWatchlistIfComplete(userId, mediaItem) {
   try {
     const knex = _dbconfig.Database.knex;
@@ -339,6 +365,7 @@ class SeenController {
       await _removeFromWatchlistIfComplete(userId, mediaItem);
       await _clearAipIfSeasonOver(userId, mediaItem);
     }
+    await _pendingIfStarted(userId, Number(mediaItemId));
     res.send();
   });
 
@@ -446,6 +473,7 @@ class SeenController {
         kind: kind || undefined
       });
     }
+    if (episodeId && mediaItemId) await _pendingIfStarted(userId, Number(mediaItemId));
     res.send();
   });
 }

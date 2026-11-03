@@ -6,7 +6,7 @@ That file also keeps the copyright notice of the earlier MIT-licensed code this 
 grew from, as that license requires. contrib/mcp-server has its own list in
 contrib/mcp-server/NOTICE.
 
-Versions are those of MediaOCD 2.0.0. app/package-lock.json pins the exact tree of the
+Versions are those of MediaOCD 2.1.0. app/package-lock.json pins the exact tree of the
 server dependencies. The full text of the MIT and Apache-2.0 licenses is at the end of
 this file.
 
@@ -137,6 +137,7 @@ fs-extra 10.1.0 - MIT
 knex 3.1.0 - MIT
 lodash 4.18.1 - MIT
 make-plural 7.4.0 - Unicode-DFS-2016
+minisearch 7.2.0 - MIT
 nanoid 3.3.20 - MIT
 passport 0.7.0 - MIT
 passport-local 1.0.0 - MIT
@@ -201,9 +202,10 @@ Audible - audiobook metadata and chapter counts
 Wikidata (CC0), Wikipedia (CC BY-SA) and teatro.es (CDT/INAEM) - theatre metadata
 FilmAffinity - rating of movies and TV shows on the details page
 Metacritic - Metascore of games on the details page
+Rotten Tomatoes - a link to search a movie or TV show; the icon is a generic tomato, not their logo
 YouTube - channel feeds, video durations and, with Google OAuth, subscriptions
 Jellyfin - your own server (GPL-2.0), reached only through its HTTP API
-Trakt and Goodreads - optional import of your own data
+Goodreads - optional import of your own data
 Discord, Gotify, ntfy, Pushbullet, Pushover, Pushsafer - optional notifications
 
 

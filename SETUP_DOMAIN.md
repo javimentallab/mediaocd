@@ -61,7 +61,7 @@ docker compose up -d mediaocd
 ## 4. Validate
 
 - Browser: `https://mediaocd.example.com` should load the app.
-- YouTube linking: from `/settings/application-tokens`, hit the *Link
+- YouTube linking: from `/settings/services`, hit the *Link
   YouTube account* button → the OAuth flow should redirect via the new
   domain and complete without a `redirect_uri_mismatch` error.
 

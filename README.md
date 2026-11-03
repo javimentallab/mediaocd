@@ -29,11 +29,13 @@ A media tracker built for **completionists**, Spanish-first and translated into 
 - **Per-medium consumption verbs**, not just "seen": played / watched / read / listened; theatre counts as seen. The same item can have several.
 - **"In progress" page that keeps itself tidy**: everything you are watching, reading, playing or listening to, for every media type. Airing shows stay while you are up to date, the card shows the next episode (even one you watched ahead of its air date) and a show leaves by itself when its season or series ends. Abandoned items have their own list. You can make it your start page.
 - **Progress in real units**: hours and minutes for movies, games, theatre and episodes; pages for books; position for audiobooks, with a chapter indicator over the read / listen bars and the real chapter count of Audible audiobooks.
+- **One green icon on every cover**: it shows the state of the item and opens one dialog for everything about its progress, so the page of an item stays clean. What is in progress is always pending too.
 - **Two-way Jellyfin integration**: marks items as downloaded when they appear in your Jellyfin library, opens "Play in Jellyfin" deeplinks, sync-back when you watch something there.
 - **YouTube as a first-class media type**: subscribe to channels, mark videos watched, view the recent feed, persistent cache that survives YouTube's RSS outages.
 - **Theatre with serious metadata**: Wikidata SPARQL for canonical works + scraping of teatro.es (CDT/INAEM, Spain) for contemporary stagings.
 - **Watchlist ordered by date added**; finished shows leave it automatically.
-- **External scores on the details page**: FilmAffinity rating for movies and TV shows, Metacritic Metascore for games, shown next to the IMDb/TMDB/IGDB logos and cached server-side.
+- **A search that forgives**, by title or author: upper and lower case, accents, typos, words written together, and the title in any language, using the translations of TMDB, IGDB and Open Library, fetched little by little (`TITLES_WARM=0` turns that off). When a catalogue finds nothing it tries again with the spelling corrected, from your library or from what Wikipedia suggests: only then is what you typed sent to Wikipedia (`SEARCH_SPELLCHECK=0` turns that off).
+- **External scores on the details page**: FilmAffinity rating for movies and TV shows, Metacritic Metascore for games (its user score when there is no Metascore), shown next to the IMDb/TMDB/IGDB logos and cached server-side.
 - **Duplicate detection** and merge tooling that doesn't lose seen / ratings / lists.
 - **Full backup / restore** including auto-restore on missing data.db, plus JSON and Letterboxd CSV exports.
 - **Works with AI assistants (MCP)**: the optional server in [`contrib/mcp-server`](contrib/mcp-server/README.md) lets an assistant search your library, mark items as seen and manage the watchlist and ratings.
@@ -58,7 +60,7 @@ docker compose up -d mediaocd
 
 Open `http://localhost:7481` — the first user to register becomes admin.
 
-**Tokens and credentials** are managed from `Settings → Application tokens`:
+**Tokens and credentials** are managed from `Settings → Services and alerts`:
 - IGDB (required for video games)
 - TMDB API key (recommended for "Where to watch" providers and episode runtimes — paste it in the UI; it's stored at `/storage/tmdb-key.json` with mode 0600)
 - Jellyfin (URL + API key)

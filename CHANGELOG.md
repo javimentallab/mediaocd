@@ -2,6 +2,46 @@
 
 Notable changes to MediaOCD. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/).
 
+## [2.1.0] - 2026-11-03
+
+### Upgrading from 2.0.0
+
+- **Rebuild the image**: there is a new dependency. Your data carries over, and no migration runs.
+- **The Trakt importer is gone**, see below.
+- **New requests to outside services**: the search fetches the titles of your items in other languages from TMDB, IGDB and Open Library, one every second and a half (`TITLES_WARM=0` turns it off). And when a catalogue finds nothing, what you typed can go to Wikipedia to correct its spelling (`SEARCH_SPELLCHECK=0` turns it off).
+
+### Changed
+
+- **Lists**: a search inside each list adds items to it from your library and the catalogues, without opening each one. The Lists page and each list follow the layout with a vertical bar.
+- **Calendar**: soft lines, today highlighted, and each release as a discreet label with the icon and colour of its medium.
+- **The page of an item**: poster and data, one row of actions, and cards for where to watch, links and history. Actions that were repeated in the dialog of the green icon left the page, and the rarer ones moved to a menu.
+- **Progress**: every cover, anywhere, carries a green icon that shows its state and opens one dialog, with the state of the item (pending, in progress, completed, with a chosen date if you want) and how far you are. On books it switches between read and listened. The bar and the percentage live only there, and the red marks on the covers are gone.
+- **The watchlist** comes second in the menu, and in Spanish it is called Pendientes.
+- **Search** forgives upper and lower case, accents, typos and words written together, and finds a title in any language, or a book by its author.
+- **The green icon** stands out on an item with no state at all, to tell it from a pending one.
+- **Rotten Tomatoes**: a link on movies and TV shows.
+- **Metacritic**: games without a Metascore show the score of its users, in a round badge. Games with no date on one side now match if their title is unique.
+- **Jellyfin**: the purple icon on a cover opens the item in Jellyfin.
+- **Games, Watched**: its two sections use vertical bars as well. A game you only watched carries an eye instead of the completed icon.
+- **Settings**: four sections instead of nine: General (preferences, languages, password, application tokens), Services and alerts (TMDB, IGDB, Jellyfin, YouTube, notifications), Data (backup, restore, export, import, catalog cleanup) and System (about, logs). A menu with icons and cards; each service says whether it is configured and opens when you click it, and notifications show only the chosen platform. The old addresses redirect to the new ones.
+- **Upcoming**: the covers, in release order, now follow a vertical bar with a numbered-list symbol and the icons of every media type.
+- **In progress, Watchlist, Dropped and Downloaded**: each section is now a row, with a vertical bar as tall as its rows of covers, showing a large icon, the name and the number of items. Sections open unfolded (the last three remember the ones you fold during the session), paging one section no longer affects the others, and Dropped and Downloaded gain a Theater section.
+
+### Removed
+
+- **The Trakt importer.** What you already imported stays: your items, your history and the links of your lists.
+
+### Fixed
+
+- **Saving progress on a show with nothing left to watch** did nothing, without a word. It now goes to its last episode.
+- **Abandoned shows** came out as in progress on their covers.
+- **In progress and pending** go together: saving progress or marking an episode puts the item in both, and taking it out of pending takes it out of in progress.
+- **Reloading a paged list** keeps its page instead of going back to the first one.
+- **The details page went blank** when "Where to watch" got an error from the server, as it does without a TMDB key.
+- **The covers on the Lists page** came out empty.
+- **The "Import from" buttons in Settings** opened the password page instead of the importer.
+- Two texts still used the old name of the app.
+
 ## [2.0.0] - 2026-11-02
 
 First release under the name MediaOCD (formerly MediaTOC), now a standalone project.
@@ -78,4 +118,5 @@ First release under the name MediaOCD (formerly MediaTOC), now a standalone proj
 - `npm`, `npx` and `corepack` removed from the final image, as they carried their own HIGH advisories.
 - CI: Trivy scans the image and the repository for vulnerabilities, secrets and misconfigurations, and CodeQL analyzes the code, on every push and every week. The tests run on every push, and another workflow builds the image, starts it and checks that it answers. Every GitHub Action is pinned by commit.
 
+[2.1.0]: https://github.com/javimentallab/mediaocd/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/javimentallab/mediaocd/compare/v1.1.3...v2.0.0

@@ -7,6 +7,7 @@ exports.SearchController = void 0;
 var _typescriptRoutesToOpenapiServer = require("typescript-routes-to-openapi-server");
 var _metadataProviders = require("../metadata/metadataProviders");
 var _mediaItem = require("../repository/mediaItem");
+var _fuzzy = require("../search/fuzzy");
 /**
  * @openapi_tags Search
  */
@@ -29,12 +30,23 @@ class SearchController {
       throw new Error(`No metadata provider for "${mediaType}"`);
     }
     const metadataProvider = _metadataProviders.metadataProviders.get(mediaType);
-    const searchResult = await metadataProvider.search(query);
-    const result = await _mediaItem.mediaItemRepository.mergeSearchResultWithExistingItems(searchResult, mediaType);
+    let searchResult = await metadataProvider.search(query);
+    /*mediaocd:forgiving-search*/
+    let local = [];
+    if (!searchResult || searchResult.length === 0) {
+      local = (await _fuzzy.searchIds(query, mediaType, { strict: true }).catch(() => [])).slice(0, 20);
+      for (const other of await _fuzzy.corrections(query, mediaType).catch(() => [])) {
+        searchResult = await metadataProvider.search(other).catch(() => []);
+        if (searchResult && searchResult.length) break;
+      }
+    }
+    const result = await _mediaItem.mediaItemRepository.mergeSearchResultWithExistingItems(searchResult || [], mediaType);
+    const ids = [...new Set([...local, ...result.map(item => item.id)])];
     const existingItemsDetails = await _mediaItem.mediaItemRepository.items({
       userId: userId,
-      mediaItemIds: result.map(item => item.id)
+      mediaItemIds: ids
     });
+    existingItemsDetails.sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id));
     res.send(existingItemsDetails);
   });
 }

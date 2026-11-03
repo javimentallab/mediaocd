@@ -34,6 +34,23 @@ class TMDb extends _metadataProvider.MetadataProvider {
 }
 class TMDbMovie extends TMDb {
   mediaType = 'movie';
+  async titles(mediaItem) {
+    if (!Number(mediaItem.tmdbId)) return [];
+    const res = await _axios.default.get(`https://api.themoviedb.org/3/movie/${Number(mediaItem.tmdbId)}`, {
+      params: {
+        api_key: TMDB_API_KEY,
+        append_to_response: 'translations,alternative_titles'
+      }
+    });
+    const translations = (res.data.translations && res.data.translations.translations) || [];
+    const alternatives = (res.data.alternative_titles && res.data.alternative_titles.titles) || [];
+    return [
+      res.data.title,
+      res.data.original_title,
+      ...translations.map(t => t.data && t.data.title),
+      ...alternatives.map(t => t.title)
+    ].filter(Boolean);
+  }
   async search(query) {
     const res = await _axios.default.get('https://api.themoviedb.org/3/search/movie', {
       params: {
@@ -95,6 +112,23 @@ class TMDbMovie extends TMDb {
 exports.TMDbMovie = TMDbMovie;
 class TMDbTv extends TMDb {
   mediaType = 'tv';
+  async titles(mediaItem) {
+    if (!Number(mediaItem.tmdbId)) return [];
+    const res = await _axios.default.get(`https://api.themoviedb.org/3/tv/${Number(mediaItem.tmdbId)}`, {
+      params: {
+        api_key: TMDB_API_KEY,
+        append_to_response: 'translations,alternative_titles'
+      }
+    });
+    const translations = (res.data.translations && res.data.translations.translations) || [];
+    const alternatives = (res.data.alternative_titles && res.data.alternative_titles.results) || [];
+    return [
+      res.data.name,
+      res.data.original_name,
+      ...translations.map(t => t.data && t.data.name),
+      ...alternatives.map(t => t.title)
+    ].filter(Boolean);
+  }
   async search(query) {
     const res = await _axios.default.get('https://api.themoviedb.org/3/search/tv', {
       params: {

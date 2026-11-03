@@ -1,6 +1,6 @@
 'use strict';
 
-// "16 interface languages ... It follows the browser's language; Settings > Configuration >
+// "16 interface languages ... It follows the browser's language; Settings > General >
 // UI language forces one." This runs the code of the bundle that builds the catalogues and
 // picks the language.
 

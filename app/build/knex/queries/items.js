@@ -10,6 +10,7 @@ Object.defineProperty(exports, "__esModule", {
 exports.getItemsKnex = exports.generateColumnNames = exports.QueryBuilderHelper = void 0;
 var _mediaItem = require("../../entity/mediaItem");
 var _dbconfig = require("../../dbconfig");
+var _fuzzy = require("../../search/fuzzy");
 var _userRating = require("../../entity/userRating");
 var _tvepisode = require("../../entity/tvepisode");
 var _list = require("../../entity/list");
@@ -193,6 +194,7 @@ setTimeout(async function () {
 }, 12000);
 
 const getItemsKnexSql = async args => {
+  let _bestFirst = [];
   const {
     onlyOnWatchlist,
     mediaType,
@@ -225,6 +227,7 @@ const getItemsKnexSql = async args => {
     lastSeenAt: 'lastSeen.date',
     'lastSeen.mediaItemId': 'lastSeen.mediaItemId',
     'seenWatched.mediaItemId': 'seenWatched.mediaItemId',
+      'seenPlayed.mediaItemId': 'seenPlayed.mediaItemId',
     numberOfEpisodes: 'numberOfEpisodes',
     unseenEpisodesCount: 'unseenEpisodesCount',
     seenEpisodesCount: 'seenEpisodesCount',
@@ -233,7 +236,8 @@ const getItemsKnexSql = async args => {
     as: 'date'
   }).from('seen').where('userId', userId).groupBy('mediaItemId').as('lastSeen'), 'lastSeen.mediaItemId', 'mediaItem.id')
     // mediaocd: seenWatched-flag
-    .leftJoin(qb => qb.select('mediaItemId').from('seen').where('userId', userId).where('kind', 'watched').groupBy('mediaItemId').as('seenWatched'), 'seenWatched.mediaItemId', 'mediaItem.id') // lastseen-deduped (was redundant lastSeen2 join)
+    .leftJoin(qb => qb.select('mediaItemId').from('seen').where('userId', userId).where('kind', 'watched').groupBy('mediaItemId').as('seenWatched'), 'seenWatched.mediaItemId', 'mediaItem.id')
+    .leftJoin(qb => qb.select('mediaItemId').from('seen').where('userId', userId).where('kind', 'played').groupBy('mediaItemId').as('seenPlayed'), 'seenPlayed.mediaItemId', 'mediaItem.id') // lastseen-deduped (was redundant lastSeen2 join)
   // Number of episodes
   .leftJoin(qb => qb.select('tvShowId').count('*', {
     as: 'numberOfEpisodes'
@@ -268,6 +272,8 @@ const getItemsKnexSql = async args => {
   query.leftJoin(qb => qb.from('activelyInProgress').where('userId', userId).as('activelyInProgress'), 'activelyInProgress.mediaItemId', 'mediaItem.id');
   query.select(_dbconfig.Database.knex.raw("CASE WHEN \"activelyInProgress\".\"id\" IS NOT NULL AND COALESCE(\"activelyInProgress\".\"excluded\", 0) = 0 THEN 1 ELSE 0 END AS \"activelyInProgressFlag\""));
   query.select(_dbconfig.Database.knex.raw("CASE WHEN COALESCE(\"activelyInProgress\".\"excluded\", 0) = 1 THEN 1 ELSE 0 END AS \"activelyInProgressExcludedFlag\""));
+  /*mediaocd:listing-respects-abandoned*/
+  query.select(_dbconfig.Database.knex.raw("EXISTS (SELECT 1 FROM \"abandoned\" WHERE \"abandoned\".\"mediaItemId\" = \"mediaItem\".\"id\" AND \"abandoned\".\"userId\" = ?) AS \"abandonedFlag\"", [userId]));
   if (Array.isArray(mediaItemIds)) {
     query.whereIn('mediaItem.id', mediaItemIds);
   } else {
@@ -291,7 +297,12 @@ const getItemsKnexSql = async args => {
 
     // Filter
     if (filter && filter.trim().length > 0) {
-      query.andWhere('mediaItem.title', 'LIKE', `%${filter}%`);
+      /*mediaocd:forgiving-search*/
+      _bestFirst = await _fuzzy.searchIds(filter, mediaType).catch(() => []);
+      query.andWhere((qb) => {
+        qb.where('mediaItem.title', 'LIKE', `%${filter}%`);
+        if (_bestFirst.length) qb.orWhereIn('mediaItem.id', _bestFirst);
+      });
     }
 
     // Next airing
@@ -347,6 +358,9 @@ const getItemsKnexSql = async args => {
   if (orderBy && sortOrder) {
     if (sortOrder.toLowerCase() !== 'asc' && sortOrder.toLowerCase() !== 'desc') {
       throw new Error('Sort order should by either asc or desc');
+    }
+    if (_bestFirst.length) {
+      query.orderByRaw(`CASE "mediaItem"."id" ${_bestFirst.map((id, i) => `WHEN ${Number(id)} THEN ${i}`).join(' ')} ELSE ${_bestFirst.length} END`);
     }
     switch (orderBy) {
       /*mediaocd:listedAt-order*/
@@ -547,7 +561,7 @@ const mapRawResult = row => {
     backdrop: row['mediaItem.backdropId'] ? `/img/${row['mediaItem.backdropId']}` : null,
     hasDetails: false,
     seen: /*mediaocd:tv-seen-requires-ended-items*/ row['mediaItem.mediaType'] === 'tv' ? (row.numberOfEpisodes > 0 && !row.unseenEpisodesCount && ["Returning Series","In Production","Planned"].indexOf(row['mediaItem.status']) < 0) : Boolean(row['lastSeen.mediaItemId']),
-    seenWatched: Boolean(row['seenWatched.mediaItemId']),
+    seenWatched: Boolean(row['seenWatched.mediaItemId']), seenPlayed: Boolean(row['seenPlayed.mediaItemId']),
     downloaded: Boolean(row['mediaItem.downloaded']),
     audioProgress: row['mediaItem.audioProgress'],
     numberOfPages: row['mediaItem.numberOfPages'],
@@ -556,7 +570,8 @@ const mapRawResult = row => {
     onWatchlist: Boolean(row['listItem.id']),
     activelyInProgress: Boolean(row.activelyInProgressFlag),
     activelyInProgressExcluded: Boolean(row.activelyInProgressExcludedFlag),
-    inProgress: (function(){var _ex=Boolean(row.activelyInProgressExcludedFlag);if(_ex)return false;var _ac=Boolean(row.activelyInProgressFlag);if(row['mediaItem.mediaType']==='tv'){var _unseen=Number(row.unseenEpisodesCount)||0;var _aired=Number(row.numberOfEpisodes)||0;var _seen=Math.max(0,_aired-_unseen);var _fueId=row['firstUnwatchedEpisode.id'];var _fueProg=Number(row['firstUnwatchedEpisode.progress'])||0;var _onWl=Boolean(row['listItem.id']);return (_seen>0&&_unseen>0)||(_fueId&&_fueProg>0)||(_onWl&&_fueId)||_ac;}else{var _has=Boolean(row['lastSeen.mediaItemId']);var _prog=Number(row['progress'])||0;var _aprog=Number(row['mediaItem.audioProgress'])||0;return (_prog>0&&_prog<1&&!_has)||(_aprog>0&&_aprog<1&&!_has)||_ac;}})(),
+    abandoned: Boolean(row.abandonedFlag),
+    inProgress: (function(){var _ex=Boolean(row.activelyInProgressExcludedFlag);if(_ex||row.abandonedFlag)return false;var _ac=Boolean(row.activelyInProgressFlag);if(row['mediaItem.mediaType']==='tv'){var _unseen=Number(row.unseenEpisodesCount)||0;var _aired=Number(row.numberOfEpisodes)||0;var _seen=Math.max(0,_aired-_unseen);var _fueId=row['firstUnwatchedEpisode.id'];var _fueProg=Number(row['firstUnwatchedEpisode.progress'])||0;var _onWl=Boolean(row['listItem.id']);return (_seen>0&&_unseen>0)||(_fueId&&_fueProg>0)||(_onWl&&_fueId)||_ac;}else{var _has=Boolean(row['lastSeen.mediaItemId']);var _prog=Number(row['progress'])||0;var _aprog=Number(row['mediaItem.audioProgress'])||0;return (_prog>0&&_prog<1&&!_has)||(_aprog>0&&_aprog<1&&!_has)||_ac;}})(),
     unseenEpisodesCount: row.unseenEpisodesCount || 0,
     seenEpisodesCount: row['seenEpisodesCount'],
     numberOfEpisodes: row.numberOfEpisodes,
@@ -620,6 +635,7 @@ const mapRawResult = row => {
       seasonNumber: row['lastAiredEpisode.seasonNumber'],
       releaseDate: row['lastAiredEpisode.releaseDate'],
       runtime: row['lastAiredEpisode.runtime'],
+      progress: row['lastAiredEpisode.progress'],
       tvShowId: row['lastAiredEpisode.tvShowId'],
       tmdbId: row['lastAiredEpisode.tmdbId'],
       imdbId: row['lastAiredEpisode.imdbId'],

@@ -29,7 +29,7 @@ Tools carry the standard MCP read-only and destructive hints, which clients can 
 
 ## Install
 
-First create a token in MediaOCD under *Settings > Application tokens*. It acts as your user, so every action is done on your behalf.
+First create a token in MediaOCD under *Settings > General > Application tokens*. It acts as your user, so every action is done on your behalf.
 
 ### With Docker
 

@@ -10,6 +10,17 @@ function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e
 class OpenLibrary extends _metadataProvider.MetadataProvider {
   name = 'openlibrary';
   mediaType = 'book';
+  async titles(mediaItem) {
+    // The id ends up in the address: only what Open Library itself calls a work.
+    const work = /^\/works\/OL\d+W$/.exec(String(mediaItem.openlibraryId || ''));
+    if (!work) return [];
+    const res = await _axios.default.get(`https://openlibrary.org${work[0]}/editions.json`, {
+      params: {
+        limit: 200
+      }
+    });
+    return ((res.data && res.data.entries) || []).map(e => e.title).filter(Boolean);
+  }
   async search(query) {
     var _result$docs;
     const res = await _axios.default.get('http://openlibrary.org/search.json', {

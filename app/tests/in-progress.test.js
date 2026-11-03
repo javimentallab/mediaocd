@@ -142,3 +142,42 @@ test('abandoned items leave In progress and have their own list', async () => {
   await app.api('DELETE', `/api/abandoned/${id}`);
   assert.strictEqual(await isIn(id, 'movie'), true);
 });
+
+test('what is in progress is also pending: a started show goes to the watchlist', async () => {
+  const show = await app.show({ title: 'Started and pending', episodes: [[1, 1, daysFromNow(-30)], [1, 2, daysFromNow(-20)]] });
+  await seenEpisode(show, 'S1E1');
+  const card = (await inProgress()).find((item) => item.id === show.id);
+  assert.strictEqual(card.inProgress, true);
+  assert.strictEqual(card.onWatchlist, true);
+});
+
+test('finishing a show does not put it on the watchlist', async () => {
+  const show = await app.show({ title: 'Finished, not pending', episodes: [[1, 1, daysFromNow(-30)]] });
+  await seenEpisode(show, 'S1E1');
+  assert.strictEqual((await app.api('GET', `/api/details/${show.id}`)).json.onWatchlist, false);
+});
+
+test('an abandoned show is in progress nowhere, and marking an episode does not make it pending', async () => {
+  const show = await app.show({ title: 'Abandoned show', episodes: [[1, 1, daysFromNow(-30)], [1, 2, daysFromNow(-20)], [1, 3, daysFromNow(-10)]] });
+  await app.api('PUT', `/api/abandoned/${show.id}`);
+  await seenEpisode(show, 'S1E1');
+  const details = (await app.api('GET', `/api/details/${show.id}`)).json;
+  assert.strictEqual(details.inProgress, false);
+  assert.strictEqual(details.onWatchlist, false);
+  const all = await app.api('GET', '/api/items', { query: { mediaType: 'tv', orderBy: 'title', sortOrder: 'asc' } });
+  const card = all.json.find((item) => item.id === show.id);
+  assert.strictEqual(card.inProgress, false);
+  assert.strictEqual(card.abandoned, true);
+});
+
+test('a show with nothing left keeps the progress of its last episode', async () => {
+  const show = await app.show({ title: 'Finished with progress', episodes: [[1, 1, daysFromNow(-30)], [1, 2, daysFromNow(-20)]] });
+  await seenEpisode(show, 'S1E1');
+  await seenEpisode(show, 'S1E2');
+  const saved = await app.api('PUT', '/api/episode-progress', { query: { episodeId: show.episodes.S1E2, progress: 0.47 } });
+  assert.strictEqual(saved.status, 200, saved.text);
+  const details = (await app.api('GET', `/api/details/${show.id}`)).json;
+  assert.strictEqual(details.lastAiredEpisode.progress, 0.47);
+  const all = await app.api('GET', '/api/items', { query: { mediaType: 'tv', orderBy: 'title', sortOrder: 'asc' } });
+  assert.strictEqual(all.json.find((item) => item.id === show.id).lastAiredEpisode.progress, 0.47);
+});

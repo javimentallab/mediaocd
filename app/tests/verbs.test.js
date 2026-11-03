@@ -64,3 +64,17 @@ test('the history button uses the verb of each medium', () => {
     theater: 'Add to seen history',
   });
 });
+
+test('lists tell a game only watched from one played', async () => {
+  const watched = await app.item({ title: 'Only watched', mediaType: 'video_game' });
+  const played = await app.item({ title: 'Played', mediaType: 'video_game' });
+  await app.api('PUT', '/api/seen', { query: { mediaItemId: watched, lastSeenAt: 'now', kind: 'watched' } });
+  await app.api('PUT', '/api/seen', { query: { mediaItemId: played, lastSeenAt: 'now', kind: 'played' } });
+  const res = await app.api('GET', '/api/items', { query: { mediaType: 'video_game', onlySeenItems: true } });
+  const flags = (id) => {
+    const it = (res.json.data || res.json).find((x) => x.id === id);
+    return [it.seenWatched, it.seenPlayed];
+  };
+  assert.deepStrictEqual(flags(watched), [true, false]);
+  assert.deepStrictEqual(flags(played), [false, true]);
+});

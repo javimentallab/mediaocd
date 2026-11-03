@@ -29,7 +29,7 @@ Las herramientas llevan las indicaciones estándar de MCP de solo lectura y dest
 
 ## Instalación
 
-Primero crea un token en MediaOCD, en *Settings > Application tokens*. Actúa como tu usuario, así que todo se hace en tu nombre.
+Primero crea un token en MediaOCD, en *Settings > General > Application tokens*. Actúa como tu usuario, así que todo se hace en tu nombre.
 
 ### Con Docker
 

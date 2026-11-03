@@ -244,6 +244,7 @@ class ListRepository extends (0, _repository.repository)({
       'mediaItem.numberOfPages': 'mediaItem.numberOfPages',
       'mediaItem.downloaded': 'mediaItem.downloaded',
       'seenWatched.mediaItemId': 'seenWatched.mediaItemId',
+      'seenPlayed.mediaItemId': 'seenPlayed.mediaItemId',
       /*mediaocd:list-episode-progress-column*/'mediaItem.firstUnwatchedEpisode.progress': _dbconfig.Database.knex.raw('COALESCE("mediaItemFirstUnwatchedEpisode"."progress", "mediaItemFueProgress"."progress")'),
       'mediaItem.releaseDate': 'mediaItem.releaseDate',
       'mediaItem.runtime': 'mediaItem.runtime',
@@ -386,7 +387,8 @@ class ListRepository extends (0, _repository.repository)({
       as: 'seasonAndEpisodeNumber'
     }).where('isSpecialEpisode', false).where('releaseDate', '>=', currentDateString).groupBy('tvShowId').as('mediaItemUpcomingEpisodeHelper'), 'mediaItemUpcomingEpisodeHelper.tvShowId', 'listItem.mediaItemId').leftJoin(_dbconfig.Database.knex.ref('episode').as('mediaItemUpcomingEpisode'), qb => qb.on('mediaItemUpcomingEpisode.tvShowId', 'listItem.mediaItemId').andOn('mediaItemUpcomingEpisode.seasonAndEpisodeNumber', 'mediaItemUpcomingEpisodeHelper.seasonAndEpisodeNumber'))
     // mediaocd: seenWatched-flag (parity with items.js)
-    .leftJoin(qb => qb.select('mediaItemId').from('seen').where('userId', userId).where('kind', 'watched').groupBy('mediaItemId').as('seenWatched'), 'seenWatched.mediaItemId', 'listItem.mediaItemId').orderBy('listItem.id', 'asc');
+    .leftJoin(qb => qb.select('mediaItemId').from('seen').where('userId', userId).where('kind', 'watched').groupBy('mediaItemId').as('seenWatched'), 'seenWatched.mediaItemId', 'listItem.mediaItemId')
+    .leftJoin(qb => qb.select('mediaItemId').from('seen').where('userId', userId).where('kind', 'played').groupBy('mediaItemId').as('seenPlayed'), 'seenPlayed.mediaItemId', 'listItem.mediaItemId').orderBy('listItem.id', 'asc');
     return res.map(listItem => {
       var _listItem$mediaItemG, _listItem$mediaItemS;
       return {
@@ -412,7 +414,7 @@ class ListRepository extends (0, _repository.repository)({
           audioProgress: listItem['mediaItem.audioProgress'],
           numberOfPages: listItem['mediaItem.numberOfPages'],
           downloaded: Boolean(listItem['mediaItem.downloaded']),
-          seenWatched: Boolean(listItem['seenWatched.mediaItemId']),
+          seenWatched: Boolean(listItem['seenWatched.mediaItemId']), seenPlayed: Boolean(listItem['seenPlayed.mediaItemId']),
           status: listItem['mediaItem.status'],
           title: listItem['mediaItem.title'],
           tmdbId: listItem['mediaItem.tmdbId'],

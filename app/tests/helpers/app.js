@@ -235,6 +235,8 @@ async function startApp({ keepStorage = false, users = true } = {}) {
     LOGS_PATH: path.join(home, 'logs'),
     FILMAFFINITY_WARM: '0',
     METACRITIC_WARM: '0',
+    TITLES_WARM: '0',
+    SEARCH_SPELLCHECK: '0',
   });
   for (const name of ['JELLYFIN_URL', 'JELLYFIN_API_KEY', 'JELLYFIN_USER_ID', 'JELLYFIN_PUBLIC_URL',
     'JELLYFIN_REVERSE_SYNC', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'GOOGLE_REDIRECT_URI',
