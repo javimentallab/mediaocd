@@ -2,7 +2,12 @@
 
 Notable changes to MediaOCD. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [2.2.0] - 2026-11-07
+
+### Upgrading from 2.1.2
+
+- **Rebuild the image** as usual. Your data carries over, and no migration runs.
+- **One new request to an outside service, only on demand**: when an administrator presses *Check for updates*, the server asks `api.github.com` for the latest release of MediaOCD. Nothing is sent but the request itself and a `User-Agent` with the version.
 
 ### Added
 
@@ -140,6 +145,7 @@ First release under the name MediaOCD (formerly MediaTOC), now a standalone proj
 - `npm`, `npx` and `corepack` removed from the final image, as they carried their own HIGH advisories.
 - CI: Trivy scans the image and the repository for vulnerabilities, secrets and misconfigurations, and CodeQL analyzes the code, on every push and every week. The tests run on every push, and another workflow builds the image, starts it and checks that it answers. Every GitHub Action is pinned by commit.
 
+[2.2.0]: https://github.com/javimentallab/mediaocd/compare/v2.1.2...v2.2.0
 [2.1.2]: https://github.com/javimentallab/mediaocd/compare/v2.1.1...v2.1.2
 [2.1.1]: https://github.com/javimentallab/mediaocd/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/javimentallab/mediaocd/compare/v2.0.0...v2.1.0

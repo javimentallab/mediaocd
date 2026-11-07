@@ -38,6 +38,7 @@ Un gestor pensado para **completistas**, con el castellano como primer idioma y 
 - **Notas externas en la ficha**: nota de FilmAffinity en películas y series y Metascore de Metacritic en juegos (la nota de usuarios si no hay Metascore), junto a los logos de IMDb/TMDB/IGDB y guardadas en caché en el servidor.
 - **Detección de duplicados** y herramientas de fusión que no pierden vistos, puntuaciones ni listas.
 - **Copia de seguridad y restauración completas**, con restauración automática si falta `data.db`, además de exportación a JSON y a CSV de Letterboxd.
+- **Buscar actualizaciones** en *Ajustes → Sistema → Acerca de*, para administradores: cuando lo pulsas, compara tu versión con la última publicada en GitHub y enseña sus notas y los comandos para actualizar. Nunca lo comprueba por su cuenta; consulta [Actualizar](#actualizar).
 - **Funciona con asistentes de IA (MCP)**: el servidor opcional de [`contrib/mcp-server`](contrib/mcp-server/README.es.md) permite a un asistente buscar en tu biblioteca, marcar cosas como vistas y gestionar los pendientes y las puntuaciones.
 - **16 idiomas de interfaz**: inglés, castellano, portugués, francés, alemán, italiano, neerlandés, polaco, ruso, ucraniano, danés, chino, japonés, coreano, tailandés e hindi. Sigue el idioma del navegador; *Ajustes → Configuración → Idioma de la interfaz* fuerza uno.
 

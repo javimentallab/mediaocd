@@ -6,7 +6,7 @@ That file also keeps the copyright notice of the earlier MIT-licensed code this 
 grew from, as that license requires. contrib/mcp-server has its own list in
 contrib/mcp-server/NOTICE.
 
-Versions are those of MediaOCD 2.1.2. app/package-lock.json pins the exact tree of the
+Versions are those of MediaOCD 2.2.0. app/package-lock.json pins the exact tree of the
 server dependencies. The full text of the MIT and Apache-2.0 licenses is at the end of
 this file.
 

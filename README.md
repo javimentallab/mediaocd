@@ -38,6 +38,7 @@ A media tracker built for **completionists**, Spanish-first and translated into 
 - **External scores on the details page**: FilmAffinity rating for movies and TV shows, Metacritic Metascore for games (its user score when there is no Metascore), shown next to the IMDb/TMDB/IGDB logos and cached server-side.
 - **Duplicate detection** and merge tooling that doesn't lose seen / ratings / lists.
 - **Full backup / restore** including auto-restore on missing data.db, plus JSON and Letterboxd CSV exports.
+- **Check for updates** in *Settings → System → About*, for administrators: when you press it, it compares your version with the latest release on GitHub and shows its notes and the commands that update. It never checks on its own, see [Updating](#updating).
 - **Works with AI assistants (MCP)**: the optional server in [`contrib/mcp-server`](contrib/mcp-server/README.md) lets an assistant search your library, mark items as seen and manage the watchlist and ratings.
 - **16 interface languages**: English, Spanish, Portuguese, French, German, Italian, Dutch, Polish, Russian, Ukrainian, Danish, Chinese, Japanese, Korean, Thai and Hindi. It follows the browser's language; *Settings → Configuration → UI language* forces one.
 
