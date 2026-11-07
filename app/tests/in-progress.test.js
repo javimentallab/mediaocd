@@ -181,3 +181,41 @@ test('a show with nothing left keeps the progress of its last episode', async ()
   const all = await app.api('GET', '/api/items', { query: { mediaType: 'tv', orderBy: 'title', sortOrder: 'asc' } });
   assert.strictEqual(all.json.find((item) => item.id === show.id).lastAiredEpisode.progress, 0.47);
 });
+
+// The seen-date picker (Progress > Choose date, Add to seen history, the MCP) only sends
+// PUT /api/seen: completing has to empty both lists on the server, like the other buttons.
+const onWatchlist = async (id, mediaType) => (await app.api('GET', '/api/items', {
+  query: { mediaType, onlyOnWatchlist: true, orderBy: 'listedAt', sortOrder: 'desc' },
+})).json.some((item) => item.id === id);
+
+test('completing a movie from the seen-date picker takes it out of In progress and Pending', async () => {
+  for (const [title, query] of [
+    ['On its release date', { lastSeenAt: 'release_date' }],
+    ['On a chosen date', { date: Date.now() - 86400000 }],
+    ['Without a date', { lastSeenAt: 'unknown' }],
+  ]) {
+    const id = await app.item({ title, mediaType: 'movie' });
+    await watchlist(id);
+    await app.api('PUT', `/api/actively-in-progress/${id}`);
+    assert.strictEqual(await isIn(id, 'movie'), true, title);
+    assert.strictEqual(await onWatchlist(id, 'movie'), true, title);
+
+    const res = await app.api('PUT', '/api/seen', { query: { mediaItemId: id, ...query } });
+    assert.strictEqual(res.status, 200, res.text);
+    assert.strictEqual(await isIn(id, 'movie'), false, title);
+    assert.strictEqual(await onWatchlist(id, 'movie'), false, title);
+  }
+});
+
+test('a game only watched (someone else playing) stays in In progress and Pending', async () => {
+  const id = await app.item({ title: 'A let\'s play', mediaType: 'video_game' });
+  await watchlist(id);
+  await app.api('PUT', `/api/actively-in-progress/${id}`);
+  await app.api('PUT', '/api/seen', { query: { mediaItemId: id, lastSeenAt: 'now', kind: 'watched' } });
+  assert.strictEqual(await isIn(id, 'video_game'), true);
+  assert.strictEqual(await onWatchlist(id, 'video_game'), true);
+
+  await app.api('PUT', '/api/seen', { query: { mediaItemId: id, lastSeenAt: 'release_date' } });
+  assert.strictEqual(await isIn(id, 'video_game'), false, 'played to the end');
+  assert.strictEqual(await onWatchlist(id, 'video_game'), false, 'played to the end');
+});

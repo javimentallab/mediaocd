@@ -68,6 +68,15 @@ async function _removeFromWatchlistIfComplete(userId, mediaItem) {
 /*mediaocd:wl-recheck-on-metadata*/
 exports._removeFromWatchlistIfComplete = _removeFromWatchlistIfComplete;
 
+/*mediaocd:completed-drops-pin*/
+// A completed item (not a show) keeps no manual pin in In progress. Only the pin
+// (excluded=0): an exclusion (excluded=1) is the user's and stays.
+async function _dropInProgressPin(userId, mediaItemId) {
+  await _dbconfig.Database.knex('activelyInProgress')
+    .where({ userId, mediaItemId, excluded: false })
+    .delete();
+}
+
 
 /*mediaocd:aip-drops-when-season-over*/
 async function _clearAipIfSeasonOver(userId, mediaItem) {
@@ -364,6 +373,14 @@ class SeenController {
     if (mediaItem.mediaType === 'tv') {
       await _removeFromWatchlistIfComplete(userId, mediaItem);
       await _clearAipIfSeasonOver(userId, mediaItem);
+    } else if (kind !== 'watched') {
+      /*mediaocd:completed-leaves-pending-and-in-progress*/
+      // Completed (not 'watched', which for games means watching someone play): out of
+      // Pending and In progress here, before res.send(), so every way of marking it
+      // (date picker, seen history, sidebar, progress dialog, MCP) gets the same lists
+      // on the refetch that follows.
+      await _removeFromWatchlistIfComplete(userId, mediaItem);
+      await _dropInProgressPin(userId, mediaItem.id);
     }
     await _pendingIfStarted(userId, Number(mediaItemId));
     res.send();
