@@ -234,47 +234,48 @@ const getItemsKnexSql = async args => {
     throw new Error(`user ${userId} has no watchlist`);
   }
   const watchlistId = watchlist.id;
-  const query = _dbconfig.Database.knex.select(generateColumnNames('firstUnwatchedEpisode', _tvepisode.tvEpisodeColumns)).select(generateColumnNames('listItem', _list.listItemColumns)).select(generateColumnNames('upcomingEpisode', _tvepisode.tvEpisodeColumns)).select(generateColumnNames('lastAiredEpisode', _tvepisode.tvEpisodeColumns)).select(generateColumnNames('userRating', _userRating.userRatingColumns)).select(generateColumnNames('mediaItem', _mediaItem.mediaItemColumns)).select({
-    lastSeenAt: 'lastSeen.date',
-    'lastSeen.mediaItemId': 'lastSeen.mediaItemId',
-    'seenWatched.mediaItemId': 'seenWatched.mediaItemId',
-      'seenPlayed.mediaItemId': 'seenPlayed.mediaItemId',
-    numberOfEpisodes: 'numberOfEpisodes',
-    unseenEpisodesCount: 'unseenEpisodesCount',
-    seenEpisodesCount: 'seenEpisodesCount',
-    progress: 'progress.progress'
-  }).from(_dbconfig.Database.knex.raw('`mediaItem` INDEXED BY mediaitem_mediatype_index')).leftJoin(qb => qb.select('mediaItemId').max('date', {
-    as: 'date'
-  }).from('seen').where('userId', userId).groupBy('mediaItemId').as('lastSeen'), 'lastSeen.mediaItemId', 'mediaItem.id')
+  /*mediaocd:per-item-subqueries*/
+  // SQLite stops building automatic indexes once one SELECT joins more than 8 tables. This
+  // query used to join 16: every grouped subquery (last seen, seen episodes, unseen
+  // episodes...) was materialised and then scanned whole for each media item, about half a
+  // second each. They are correlated subqueries now, each one on its own index, with the
+  // same column names, the same conditions and the same NULL when there is nothing.
+  const _kx = _dbconfig.Database.knex;
+  const _onlyNonTv = typeof mediaType !== 'undefined' && !!mediaType && mediaType !== 'tv';
+  const _sub = _onlyNonTv ? (sql, b) => ['NULL', []] : (sql, b) => ['(' + sql + ')', b];
+  const _hasSeen = ['EXISTS (SELECT 1 FROM "seen" "sq" WHERE "sq"."userId" = ? AND "sq"."mediaItemId" = "mediaItem"."id")', [userId]];
+  const _hasKind = (kind) => ['EXISTS (SELECT 1 FROM "seen" "sq" WHERE "sq"."userId" = ? AND "sq"."mediaItemId" = "mediaItem"."id" AND "sq"."kind" = ?)', [userId, kind]];
+  const _lastSeenDate = ['(SELECT MAX("sq"."date") FROM "seen" "sq" WHERE "sq"."userId" = ? AND "sq"."mediaItemId" = "mediaItem"."id")', [userId]];
+  const _airedWhere = 'NOT "eq"."isSpecialEpisode" = 1 AND NOT "eq"."releaseDate" = \'\' AND "eq"."releaseDate" IS NOT NULL AND "eq"."releaseDate" <= ?';
+  const _numberOfEpisodes = _sub('SELECT NULLIF(COUNT(*), 0) FROM "episode" "eq" WHERE "eq"."tvShowId" = "mediaItem"."id" AND ' + _airedWhere, [currentDateString]);
+  const _seenEpisodesCount = _sub('SELECT NULLIF(COUNT(DISTINCT "sq"."episodeId"), 0) FROM "seen" "sq" LEFT JOIN "episode" "eq" ON "eq"."id" = "sq"."episodeId" WHERE "sq"."userId" = ? AND "sq"."mediaItemId" = "mediaItem"."id" AND "sq"."episodeId" IS NOT NULL AND NOT "eq"."isSpecialEpisode" = 1', [userId]);
+  const _unseenWhere = '"eq"."tvShowId" = "mediaItem"."id" AND ' + _airedWhere + ' AND NOT EXISTS (SELECT 1 FROM "seen" "sq" WHERE "sq"."episodeId" = "eq"."id" AND "sq"."userId" = ?)';
+  const _unseenEpisodesCount = _sub('SELECT NULLIF(COUNT(*), 0) FROM "episode" "eq" WHERE ' + _unseenWhere, [currentDateString, userId]);
+  const _firstUnwatchedSae = _sub('SELECT MIN("eq"."seasonAndEpisodeNumber") FROM "episode" "eq" WHERE ' + _unseenWhere, [currentDateString, userId]);
+  const _upcomingSae = _sub('SELECT MIN("eq"."seasonAndEpisodeNumber") FROM "episode" "eq" WHERE "eq"."tvShowId" = "mediaItem"."id" AND "eq"."isSpecialEpisode" = 0 AND "eq"."releaseDate" >= ?', [currentDateString]);
+  const _lastAiredSae = _sub('SELECT MAX("eq"."seasonAndEpisodeNumber") FROM "episode" "eq" WHERE "eq"."tvShowId" = "mediaItem"."id" AND "eq"."isSpecialEpisode" = 0 AND "eq"."releaseDate" < ?', [currentDateString]);
+  const _gt0 = (e) => [e[0] + ' > 0', e[1]];
+  const _episodeAt = (alias, sae) => ['LEFT JOIN "episode" AS "' + alias + '" ON "' + alias + '"."tvShowId" = "mediaItem"."id" AND "' + alias + '"."seasonAndEpisodeNumber" = ' + sae[0], sae[1]];
+  const query = _kx.select(generateColumnNames('firstUnwatchedEpisode', _tvepisode.tvEpisodeColumns)).select(generateColumnNames('listItem', _list.listItemColumns)).select(generateColumnNames('upcomingEpisode', _tvepisode.tvEpisodeColumns)).select(generateColumnNames('lastAiredEpisode', _tvepisode.tvEpisodeColumns)).select(generateColumnNames('userRating', _userRating.userRatingColumns)).select(generateColumnNames('mediaItem', _mediaItem.mediaItemColumns))
+    .select(_kx.raw(_lastSeenDate[0] + ' AS "lastSeenAt"', _lastSeenDate[1]))
+    .select(_kx.raw('CASE WHEN ' + _hasSeen[0] + ' THEN "mediaItem"."id" END AS "lastSeen.mediaItemId"', _hasSeen[1]))
     // mediaocd: seenWatched-flag
-    .leftJoin(qb => qb.select('mediaItemId').from('seen').where('userId', userId).where('kind', 'watched').groupBy('mediaItemId').as('seenWatched'), 'seenWatched.mediaItemId', 'mediaItem.id')
-    .leftJoin(qb => qb.select('mediaItemId').from('seen').where('userId', userId).where('kind', 'played').groupBy('mediaItemId').as('seenPlayed'), 'seenPlayed.mediaItemId', 'mediaItem.id') // lastseen-deduped (was redundant lastSeen2 join)
-  // Number of episodes
-  .leftJoin(qb => qb.select('tvShowId').count('*', {
-    as: 'numberOfEpisodes'
-  }).from('episode').modify(function(qq){if(typeof mediaType!=='undefined'&&mediaType&&mediaType!=='tv')qq.whereRaw('1=0')}).whereNot('isSpecialEpisode', true).andWhereNot('releaseDate', '').andWhereNot('releaseDate', null).andWhere('releaseDate', '<=', currentDateString).groupBy('tvShowId').as('numberOfEpisodes'), 'numberOfEpisodes.tvShowId', 'mediaItem.id')
+    .select(_kx.raw('CASE WHEN ' + _hasKind('watched')[0] + ' THEN "mediaItem"."id" END AS "seenWatched.mediaItemId"', _hasKind('watched')[1]))
+    .select(_kx.raw('CASE WHEN ' + _hasKind('played')[0] + ' THEN "mediaItem"."id" END AS "seenPlayed.mediaItemId"', _hasKind('played')[1]))
+    .select(_kx.raw(_numberOfEpisodes[0] + ' AS "numberOfEpisodes"', _numberOfEpisodes[1]))
+    .select(_kx.raw(_unseenEpisodesCount[0] + ' AS "unseenEpisodesCount"', _unseenEpisodesCount[1]))
+    .select(_kx.raw(_seenEpisodesCount[0] + ' AS "seenEpisodesCount"', _seenEpisodesCount[1]))
+    .select({
+    progress: 'progress.progress'
+  }).from(_kx.raw('`mediaItem` INDEXED BY mediaitem_mediatype_index'))
   // On watchlist
   .leftJoin('listItem', qb => {
     qb.on('listItem.mediaItemId', 'mediaItem.id').andOnNull('listItem.seasonId').andOnNull('listItem.episodeId').andOnVal('listItem.listId', watchlistId);
   })
-  // Upcoming episode
-  .leftJoin(qb => qb.from('episode').modify(function(qq){if(typeof mediaType!=='undefined'&&mediaType&&mediaType!=='tv')qq.whereRaw('1=0')}).select('tvShowId').min('seasonAndEpisodeNumber', {
-    as: 'upcomingEpisodeSeasonAndEpisodeNumber'
-  }).where('isSpecialEpisode', false).where('releaseDate', '>=', currentDateString).groupBy('tvShowId').as('upcomingEpisodeHelper'), 'upcomingEpisodeHelper.tvShowId', 'mediaItem.id').leftJoin(_dbconfig.Database.knex.ref('episode').as('upcomingEpisode'), qb => qb.on('upcomingEpisode.tvShowId', 'mediaItem.id').andOn('upcomingEpisode.seasonAndEpisodeNumber', 'upcomingEpisodeSeasonAndEpisodeNumber'))
-  // Last aired episode
-  .leftJoin(qb => qb.from('episode').modify(function(qq){if(typeof mediaType!=='undefined'&&mediaType&&mediaType!=='tv')qq.whereRaw('1=0')}).select('tvShowId').max('seasonAndEpisodeNumber', {
-    as: 'lastAiredEpisodeSeasonAndEpisodeNumber'
-  }).where('isSpecialEpisode', false).where('releaseDate', '<', currentDateString).groupBy('tvShowId').as('lastAiredEpisodeHelper'), 'lastAiredEpisodeHelper.tvShowId', 'mediaItem.id').leftJoin(_dbconfig.Database.knex.ref('episode').as('lastAiredEpisode'), qb => qb.on('lastAiredEpisode.tvShowId', 'mediaItem.id').andOn('lastAiredEpisode.seasonAndEpisodeNumber', 'lastAiredEpisodeSeasonAndEpisodeNumber'))
-  // Seen episodes count
-  .leftJoin(qb => qb.select('mediaItemId').count('*', {
-    as: 'seenEpisodesCount'
-  }).from(qb => qb.select('mediaItemId').from('seen').modify(function(qq){if(typeof mediaType!=='undefined'&&mediaType&&mediaType!=='tv')qq.whereRaw('1=0')}).where('userId', userId).whereNotNull('episodeId').groupBy('mediaItemId', 'episodeId').leftJoin('episode', 'episode.id', 'seen.episodeId').whereNot('episode.isSpecialEpisode', true).as('seen') /* seenEpisodes-short-circuited */).groupBy('mediaItemId').as('seenEpisodes'), 'seenEpisodes.mediaItemId', 'mediaItem.id')
-  // First unwatched episode and unseen episodes count
-  .leftJoin(qb => qb.from('episode').modify(function(qq){if(typeof mediaType!=='undefined'&&mediaType&&mediaType!=='tv')qq.whereRaw('1=0')}).select('tvShowId').min('seasonAndEpisodeNumber', {
-    as: 'seasonAndEpisodeNumber'
-  }).count('*', {
-    as: 'unseenEpisodesCount'
-  }).leftJoin(qb => qb.from('seen').where('userId', userId).as('seen'), 'seen.episodeId', 'episode.id').whereNot('episode.isSpecialEpisode', true).whereNot('episode.releaseDate', '').whereNot('episode.releaseDate', null).where('episode.releaseDate', '<=', currentDateString).whereNull('seen.userId').groupBy('tvShowId').as('firstUnwatchedEpisodeHelper'), 'firstUnwatchedEpisodeHelper.tvShowId', 'mediaItem.id').leftJoin(_dbconfig.Database.knex.ref('episode').as('firstUnwatchedEpisode'), qb => qb.on('firstUnwatchedEpisode.tvShowId', 'mediaItem.id').andOn('firstUnwatchedEpisode.seasonAndEpisodeNumber', 'firstUnwatchedEpisodeHelper.seasonAndEpisodeNumber'))
+  // Upcoming, last aired and first unwatched episodes
+  .joinRaw(..._episodeAt('upcomingEpisode', _upcomingSae))
+  .joinRaw(..._episodeAt('lastAiredEpisode', _lastAiredSae))
+  .joinRaw(..._episodeAt('firstUnwatchedEpisode', _firstUnwatchedSae))
   // User rating
   .leftJoin(qb => qb.from('userRating').whereNotNull('userRating.rating').orWhereNotNull('userRating.review').as('userRating'), qb => qb.on('userRating.mediaItemId', 'mediaItem.id').andOnVal('userRating.userId', userId).andOnNull('userRating.episodeId').andOnNull('userRating.seasonId'))
   // Progress
@@ -289,12 +290,12 @@ const getItemsKnexSql = async args => {
     query.whereIn('mediaItem.id', mediaItemIds);
   } else {
     /*mediaocd:base-filter-includes-abandoned*/
-    query.where(qb => qb.whereNotNull('listItem.mediaItemId').orWhereNotNull('lastSeen.mediaItemId').orWhereExists(function() { this.from('abandoned').where('abandoned.userId', userId).whereRaw('abandoned.mediaItemId = mediaItem.id'); }).orWhereExists(function() { this.from('progress as progressBase').where('progressBase.userId', userId).whereRaw('progressBase.mediaItemId = mediaItem.id'); }).orWhereExists(function() { this.from('activelyInProgress as aipBase').where('aipBase.userId', userId).whereRaw('aipBase.mediaItemId = mediaItem.id'); }));/*mediaocd:base-filter-includes-progress-aip*/
+    query.where(qb => qb.whereNotNull('listItem.mediaItemId').orWhereRaw(..._hasSeen).orWhereExists(function() { this.from('abandoned').where('abandoned.userId', userId).whereRaw('abandoned.mediaItemId = mediaItem.id'); }).orWhereExists(function() { this.from('progress as progressBase').where('progressBase.userId', userId).whereRaw('progressBase.mediaItemId = mediaItem.id'); }).orWhereExists(function() { this.from('activelyInProgress as aipBase').where('aipBase.userId', userId).whereRaw('aipBase.mediaItemId = mediaItem.id'); }));/*mediaocd:base-filter-includes-progress-aip*/
     if (onlyOnWatchlist) {
       query.whereNotNull('listItem.mediaItemId');
     }
     if (onlySeenItems === true || onlySeenItems === 'true' || onlySeenItems === 1) { // only-seen-truthy
-      query.whereNotNull('lastSeen.mediaItemId');
+      query.whereRaw(..._hasSeen);
     }
     if (onlySeenItems === false) {
       query.andWhereNot(qb => qb.where('mediaItem.mediaType', 'tv').andWhere('firstUnwatchedEpisode.tvShowId', null)).andWhere(qb => qb.where('mediaItem.mediaType', 'tv').orWhere('mediaItem.releaseDate', '<=', currentDateString));
@@ -332,7 +333,7 @@ const getItemsKnexSql = async args => {
 
     // nextEpisodesToWatchSubQuery
     if (onlyWithNextEpisodesToWatch === true) {
-      query.where('seenEpisodesCount', '>', 0).andWhere('unseenEpisodesCount', '>', 0);
+      query.whereRaw(..._gt0(_seenEpisodesCount)).andWhereRaw(..._gt0(_unseenEpisodesCount));
     }
     if (onlyWithUserRating === true) {
       query.whereNotNull('userRating.rating');
@@ -341,7 +342,7 @@ const getItemsKnexSql = async args => {
       query.whereNull('userRating.rating');
     }
     if (onlyWithProgress) {
-      query.where(qb => qb.where(sub => sub.whereNotExists(function() { this.from('activelyInProgress').whereRaw('activelyInProgress.mediaItemId = mediaItem.id').where('activelyInProgress.userId', userId).where('activelyInProgress.excluded', true); }).andWhere(inner => inner.where(qb => qb.whereNot('mediaItem.mediaType', 'tv').whereNotNull('progress.mediaItemId').where('progress.progress', '>', 0).where('progress.progress', '<', 1).whereNotExists(function() { this.from('seen').whereRaw('seen.mediaItemId = mediaItem.id').where('seen.userId', userId); })).orWhere(qb => qb.where('mediaItem.mediaType', 'tv').where('seenEpisodesCount', '>', 0).andWhere('unseenEpisodesCount', '>', 0)).orWhere(qb => qb.where('mediaItem.mediaType', 'tv').andWhere('firstUnwatchedEpisode.progress', '>', 0)).orWhere(qb => qb./* WATCHLIST_NONTV_DROPPED_V1 */whereNotNull('listItem.mediaItemId').where('mediaItem.mediaType', 'tv').whereNotNull('firstUnwatchedEpisode.tvShowId')).orWhere(qb => qb/*mediaocd:airing-tv-stays-in-progress*/.where('mediaItem.mediaType', 'tv').whereIn('mediaItem.status', ['Returning Series', 'In Production', 'Planned']).whereNotNull('listItem.mediaItemId').where('seenEpisodesCount', '>', 0).whereNotNull('upcomingEpisode.releaseDate').whereRaw('"upcomingEpisode"."seasonNumber" = "lastAiredEpisode"."seasonNumber"')).orWhere(qb => qb/*mediaocd:seen-ahead-of-air-stays-in-progress*/.where('mediaItem.mediaType', 'tv').whereIn('mediaItem.status', ['Returning Series', 'In Production', 'Planned']).whereExists(function() { this.from('episode as aheadEp').whereRaw('"aheadEp"."tvShowId" = "mediaItem"."id"').where('aheadEp.isSpecialEpisode', false).where(d => d.whereNull('aheadEp.releaseDate').orWhere('aheadEp.releaseDate', '').orWhere('aheadEp.releaseDate', '>', currentDateString)).whereNotExists(function() { this.from('seen').whereRaw('"seen"."episodeId" = "aheadEp"."id"').where('seen.userId', userId); }).whereRaw('"aheadEp"."seasonNumber" = (SELECT MAX("se"."seasonNumber") FROM "seen" "sn" JOIN "episode" "se" ON "se"."id" = "sn"."episodeId" WHERE "sn"."mediaItemId" = "mediaItem"."id" AND "sn"."userId" = ? AND "se"."isSpecialEpisode" = 0)', [userId]); })).orWhere(qb => qb.whereNot('mediaItem.mediaType', 'tv').where('mediaItem.audioProgress', '>', 0).where('mediaItem.audioProgress', '<', 1).whereNotExists(function() { this.from('seen').whereRaw('seen.mediaItemId = mediaItem.id').where('seen.userId', userId); })))).orWhere(qb => qb.whereExists(function() { this.from('activelyInProgress').whereRaw('activelyInProgress.mediaItemId = mediaItem.id').where('activelyInProgress.userId', userId).where('activelyInProgress.excluded', false); })));
+      query.where(qb => qb.where(sub => sub.whereNotExists(function() { this.from('activelyInProgress').whereRaw('activelyInProgress.mediaItemId = mediaItem.id').where('activelyInProgress.userId', userId).where('activelyInProgress.excluded', true); }).andWhere(inner => inner.where(qb => qb.whereNot('mediaItem.mediaType', 'tv').whereNotNull('progress.mediaItemId').where('progress.progress', '>', 0).where('progress.progress', '<', 1).whereNotExists(function() { this.from('seen').whereRaw('seen.mediaItemId = mediaItem.id').where('seen.userId', userId); })).orWhere(qb => qb.where('mediaItem.mediaType', 'tv').whereRaw(..._gt0(_seenEpisodesCount)).andWhereRaw(..._gt0(_unseenEpisodesCount))).orWhere(qb => qb.where('mediaItem.mediaType', 'tv').andWhere('firstUnwatchedEpisode.progress', '>', 0)).orWhere(qb => qb./* WATCHLIST_NONTV_DROPPED_V1 */whereNotNull('listItem.mediaItemId').where('mediaItem.mediaType', 'tv').whereNotNull('firstUnwatchedEpisode.tvShowId')).orWhere(qb => qb/*mediaocd:airing-tv-stays-in-progress*/.where('mediaItem.mediaType', 'tv').whereIn('mediaItem.status', ['Returning Series', 'In Production', 'Planned']).whereNotNull('listItem.mediaItemId').whereRaw(..._gt0(_seenEpisodesCount)).whereNotNull('upcomingEpisode.releaseDate').whereRaw('"upcomingEpisode"."seasonNumber" = "lastAiredEpisode"."seasonNumber"')).orWhere(qb => qb/*mediaocd:seen-ahead-of-air-stays-in-progress*/.where('mediaItem.mediaType', 'tv').whereIn('mediaItem.status', ['Returning Series', 'In Production', 'Planned']).whereExists(function() { this.from('episode as aheadEp').whereRaw('"aheadEp"."tvShowId" = "mediaItem"."id"').where('aheadEp.isSpecialEpisode', false).where(d => d.whereNull('aheadEp.releaseDate').orWhere('aheadEp.releaseDate', '').orWhere('aheadEp.releaseDate', '>', currentDateString)).whereNotExists(function() { this.from('seen').whereRaw('"seen"."episodeId" = "aheadEp"."id"').where('seen.userId', userId); }).whereRaw('"aheadEp"."seasonNumber" = (SELECT MAX("se"."seasonNumber") FROM "seen" "sn" JOIN "episode" "se" ON "se"."id" = "sn"."episodeId" WHERE "sn"."mediaItemId" = "mediaItem"."id" AND "sn"."userId" = ? AND "se"."isSpecialEpisode" = 0)', [userId]); })).orWhere(qb => qb.whereNot('mediaItem.mediaType', 'tv').where('mediaItem.audioProgress', '>', 0).where('mediaItem.audioProgress', '<', 1).whereNotExists(function() { this.from('seen').whereRaw('seen.mediaItemId = mediaItem.id').where('seen.userId', userId); })))).orWhere(qb => qb.whereExists(function() { this.from('activelyInProgress').whereRaw('activelyInProgress.mediaItemId = mediaItem.id').where('activelyInProgress.userId', userId).where('activelyInProgress.excluded', false); })));
     }
       if (onlyDownloaded) {
         query.where('mediaItem.downloaded', true);
