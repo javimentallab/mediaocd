@@ -20,6 +20,15 @@ const _itemsCache = new Map();
 /*mediaocd:items-cache-ttl-5min*/ const _ITEMS_CACHE_TTL = 300000;
 const _ITEMS_CACHE_MAX = 256;
 let _itemsCacheHookInstalled = false;
+/*mediaocd:items-cache-generation*/
+// Bumped on every write. A read that started before a write may finish after it: it must
+// not store what it read, or the next requests get the old lists for the whole TTL.
+let _itemsCacheGen = 0;
+function invalidateItemsCache() {
+  _itemsCacheGen++;
+  _itemsCache.clear();
+}
+exports.invalidateItemsCache = invalidateItemsCache;
 function _installItemsCacheInvalidationHook() {
   if (_itemsCacheHookInstalled) return;
   try {
@@ -29,7 +38,7 @@ function _installItemsCacheInvalidationHook() {
       try {
         const sql = q && q.sql ? String(q.sql) : '';
         if (/^\s*(INSERT|UPDATE|DELETE|REPLACE)\b/i.test(sql)) {
-          _itemsCache.clear();
+          invalidateItemsCache();
         }
       } catch (_) {}
     });
@@ -158,7 +167,9 @@ const getItemsKnex = async args => {
   const key = String((args && args.userId) || 0) + '|' + JSON.stringify(_normalizeItemsArgs(args));
   const hit = _itemsCache.get(key);
   if (hit && (Date.now() - hit.at) < _ITEMS_CACHE_TTL) return hit.payload;
+  const gen = _itemsCacheGen;
   const payload = await _fillAheadOfAirEpisode(await _getItemsKnexUncached(args), args && args.userId);
+  if (gen !== _itemsCacheGen) return payload;
   _itemsCache.set(key, { at: Date.now(), payload: payload });
   if (_itemsCache.size > _ITEMS_CACHE_MAX) {
     // Evict ~25% oldest entries.

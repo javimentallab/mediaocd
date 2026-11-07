@@ -105,6 +105,17 @@ class Server {
         (0, _auth.requireUserAuthentication)(req, res, next);
       }
     });
+    /*mediaocd:writes-invalidate-items-cache*/
+    // Any write request, whatever it writes and however (transaction, raw SQL, a file):
+    // drop the cached lists when it starts and again when it ends.
+    this.#app.use((req, res, next) => {
+      if (req.method !== 'GET' && req.method !== 'HEAD' && req.path.startsWith('/api/')) {
+        const { invalidateItemsCache } = require('./knex/queries/items');
+        invalidateItemsCache();
+        res.on('finish', invalidateItemsCache);
+      }
+      next();
+    });
     this.#app.use(_routes.generatedRoutes);
     this.#app.use(_errorLoggerMiddleware.errorLoggerMiddleware);
     return this.#app;
