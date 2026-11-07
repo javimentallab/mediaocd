@@ -2,6 +2,23 @@
 
 Notable changes to MediaOCD. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/).
 
+## [2.2.1] - 2026-11-07
+
+### Upgrading from 2.2.0
+
+- **Rebuild the image** as usual. Your data carries over. One migration runs on start-up and adds two indexes; it takes a few seconds on a large library.
+
+### Fixed
+
+- **The page could go black** after adding or removing something in *Pending*. The interface rewrote in memory the lists of every section, including those still loading, which were left without a list; drawing them brought the whole interface down, and the broken copy kept in the browser kept it black after reloading. Only lists that already hold data are now rewritten, a stored copy without a list is discarded, and if something fails to draw, an error with a *Refresh* button appears under the menu instead of a blank page.
+- **Sections were slow to load and to update.** The query behind every section joined 16 tables, and from nine on SQLite stops creating automatic indexes, so it read the whole history again for each item. It now uses one indexed subquery per item, with two new indexes, and returns exactly the same results: *Home* goes from about 9 s to 1.4 s, and refreshing after an action from about 8 s to 0.6 s. As the server answers one query at a time, an item card opened just after an action no longer waits behind them.
+- **Marking a film as seen from its date picker** now takes it out of *Pending* and *In progress*, as marking it from anywhere else did.
+- **The *Downloaded* count for books** now includes the audiobooks the section lists.
+
+### Changed
+
+- **Every change refreshes the sections without reloading the page**: seen with or without a date, *In progress*, *Pending*, abandoning or resuming, downloaded, progress, ratings, lists and episodes. The sections on screen reload at once and the others when you open them, keeping what they showed meanwhile; the cached server lists are emptied before and after each write, so nothing read before it is served after it.
+
 ## [2.2.0] - 2026-11-07
 
 ### Upgrading from 2.1.2
@@ -145,6 +162,7 @@ First release under the name MediaOCD (formerly MediaTOC), now a standalone proj
 - `npm`, `npx` and `corepack` removed from the final image, as they carried their own HIGH advisories.
 - CI: Trivy scans the image and the repository for vulnerabilities, secrets and misconfigurations, and CodeQL analyzes the code, on every push and every week. The tests run on every push, and another workflow builds the image, starts it and checks that it answers. Every GitHub Action is pinned by commit.
 
+[2.2.1]: https://github.com/javimentallab/mediaocd/compare/v2.2.0...v2.2.1
 [2.2.0]: https://github.com/javimentallab/mediaocd/compare/v2.1.2...v2.2.0
 [2.1.2]: https://github.com/javimentallab/mediaocd/compare/v2.1.1...v2.1.2
 [2.1.1]: https://github.com/javimentallab/mediaocd/compare/v2.1.0...v2.1.1
