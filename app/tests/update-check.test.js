@@ -132,7 +132,7 @@ test('GitHub that does not answer is given up on after the timeout', async () =>
 });
 
 test('only an administrator can check, and nobody else makes GitHub be asked', async () => {
-  const askedGithub = () => calls.filter((c) => c.url.includes('api.github.com')).length;
+  const askedGithub = () => calls.filter((c) => new URL(c.url).hostname === 'api.github.com').length;
   const asked = askedGithub();
   const user = await app.createUser('not-admin');
   assert.strictEqual((await check({ token: user.token })).status, 403);
