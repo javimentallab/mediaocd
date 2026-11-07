@@ -432,7 +432,7 @@ const getItemsKnexSql = async args => {
     }
   }
   const _knex = _dbconfig.Database.knex;
-  const _applyMt = qb => { if (mediaType) qb.where('mediaType', mediaType); if (mediaItemIds) qb.whereIn('id', mediaItemIds); };
+  const _applyMt = qb => { if (mediaType === 'book') qb.whereIn('mediaType', ['book', 'audiobook']); else if (mediaType) qb.where('mediaType', mediaType); if (mediaItemIds) qb.whereIn('id', mediaItemIds); };
   let sqlCountQuery;
   /* mediaocd: count-query-abandoned */
   const _isAbnd = v => v === true || v === 'true' || v === 1;
