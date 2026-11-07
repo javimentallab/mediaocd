@@ -2,6 +2,12 @@
 
 Notable changes to MediaOCD. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **Check for updates**, in `Settings → System → About`, for administrators. When you press it, the server asks GitHub for the latest release (`/api/update-check`, eight-second timeout) and says whether you have it. If there is a newer one, it shows its notes and the commands that update a clone, with a button to copy them. It never checks on its own, and nothing is downloaded or installed: an app inside a container cannot replace itself safely.
+
 ## [2.1.2] - 2026-11-03
 
 ### Removed

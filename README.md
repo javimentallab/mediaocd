@@ -68,6 +68,19 @@ Open `http://localhost:7481` — the first user to register becomes admin.
 
 To put it behind your own domain, see [`SETUP_DOMAIN.md`](SETUP_DOMAIN.md).
 
+### Updating
+
+`Settings → System → About → Check for updates` (administrators only) asks GitHub for the latest release when you press it, never on its own. If there is a newer one, it shows its notes and these commands, to run in the folder of the clone:
+
+```sh
+git fetch --tags origin
+git checkout v2.2.0                 # the tag of the new release
+docker compose build mediaocd
+docker compose up -d mediaocd
+```
+
+Your data stays in `mediaocd-data` and `mediaocd-assets`. Read the notes of the release first: some versions need an extra step, listed in [`CHANGELOG.md`](CHANGELOG.md) under *Upgrading*.
+
 ## Custom endpoints
 
 | Method | Path | Purpose |
@@ -89,6 +102,7 @@ To put it behind your own domain, see [`SETUP_DOMAIN.md`](SETUP_DOMAIN.md).
 | `GET` | `/api/filmaffinity` | FilmAffinity rating for a movie/TV item (`?mediaItemId=`) |
 | `GET` | `/api/metacritic` | Metacritic Metascore for a game (`?mediaItemId=`) |
 | `GET` `/PUT` | `/api/tmdb/key` | TMDB API key managed via UI (admin) |
+| `GET` | `/api/update-check` | Compares this version with the latest release on GitHub (admin) |
 | `GET` `/POST` `/DELETE` | `/api/youtube/channels` | YouTube subscriptions |
 | `GET` | `/api/youtube/feed` | Recent videos (`?fresh=1` to bypass the cache) |
 | `*` | `/api/youtube/oauth/*` | Google OAuth (start/callback/status/sync) |

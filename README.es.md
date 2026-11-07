@@ -68,6 +68,19 @@ Abre `http://localhost:7481`: el primer usuario que se registra es el administra
 
 Para ponerlo detrás de tu propio dominio, consulta [`SETUP_DOMAIN.md`](SETUP_DOMAIN.md) (en inglés).
 
+### Actualizar
+
+`Ajustes → Sistema → Acerca de → Buscar actualizaciones` (solo administradores) pregunta a GitHub por la última versión publicada cuando lo pulsas, nunca por su cuenta. Si hay una más reciente, enseña sus notas y estos comandos, para ejecutarlos en la carpeta del clon:
+
+```sh
+git fetch --tags origin
+git checkout v2.2.0                 # la etiqueta de la versión nueva
+docker compose build mediaocd
+docker compose up -d mediaocd
+```
+
+Tus datos siguen en `mediaocd-data` y `mediaocd-assets`. Lee antes las notas de la versión: algunas necesitan un paso más, que se explica en [`CHANGELOG.md`](CHANGELOG.md) (en inglés), en el apartado *Upgrading*.
+
 ## Endpoints propios
 
 | Método | Ruta | Para qué sirve |
@@ -89,6 +102,7 @@ Para ponerlo detrás de tu propio dominio, consulta [`SETUP_DOMAIN.md`](SETUP_DO
 | `GET` | `/api/filmaffinity` | Nota de FilmAffinity de una película o serie (`?mediaItemId=`) |
 | `GET` | `/api/metacritic` | Metascore de Metacritic de un juego (`?mediaItemId=`) |
 | `GET` `/PUT` | `/api/tmdb/key` | Clave de API de TMDB gestionada desde la interfaz (admin) |
+| `GET` | `/api/update-check` | Compara esta versión con la última publicada en GitHub (admin) |
 | `GET` `/POST` `/DELETE` | `/api/youtube/channels` | Suscripciones de YouTube |
 | `GET` | `/api/youtube/feed` | Vídeos recientes (`?fresh=1` para saltarse la caché) |
 | `*` | `/api/youtube/oauth/*` | Google OAuth (start/callback/status/sync) |
