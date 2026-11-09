@@ -1,0 +1,168 @@
+MediaOCD MCP server (contrib/mcp-server)
+Third-party components
+
+This notice covers contrib/mcp-server only. The code in this directory is under the
+MIT license, in the LICENSE file at the root of the repository.
+
+None of the components below are included in this repository. pip downloads them when
+you install the server or build its Docker image, and each one keeps its license text
+in its own *.dist-info directory.
+
+
+Runtime dependencies (requirements.txt)
+---------------------------------------
+
+annotated-types 0.8.0 - MIT
+  Copyright (c) 2022 the contributors
+  https://github.com/annotated-types/annotated-types
+
+anyio 4.15.1 - MIT
+  Copyright (c) 2018 Alex Gronholm
+  https://github.com/agronholm/anyio
+
+attrs 26.1.0 - MIT
+  Copyright (c) 2015 Hynek Schlawack and the attrs contributors
+  https://github.com/python-attrs/attrs
+
+cffi 2.1.1 - MIT-0
+  The CFFI contributors
+  https://github.com/python-cffi/cffi
+
+click 8.5.0 - BSD-3-Clause
+  Copyright 2014 Pallets
+  https://github.com/pallets/click
+
+cryptography 50.0.2 - Apache-2.0 OR BSD-3-Clause
+  Copyright (c) Individual contributors
+  Its binary wheels include OpenSSL (Apache-2.0).
+  https://github.com/pyca/cryptography
+
+h11 0.16.0 - MIT
+  Copyright (c) 2016 Nathaniel J. Smith and other contributors
+  https://github.com/python-hyper/h11
+
+httpcore2 2.13.1 - BSD-3-Clause
+  Copyright (c) 2026 to present Pydantic Services Inc. and individual contributors
+  https://github.com/pydantic/httpx2
+
+httpx2 2.13.1 - BSD-3-Clause
+  Copyright (c) 2026 to present Pydantic Services Inc. and individual contributors
+  https://github.com/pydantic/httpx2
+
+idna 3.20 - BSD-3-Clause
+  Copyright (c) 2013-2026, Kim Davies and contributors
+  https://github.com/kjd/idna
+
+jsonschema 4.26.0 - MIT
+  Copyright (c) 2013 Julian Berman
+  https://github.com/python-jsonschema/jsonschema
+
+jsonschema-specifications 2025.9.1 - MIT
+  Copyright (c) 2022 Julian Berman
+  https://github.com/python-jsonschema/jsonschema-specifications
+
+mcp 2.3.0 - MIT
+  Copyright (c) 2024 Anthropic, PBC
+  https://github.com/modelcontextprotocol/python-sdk
+
+mcp-types 2.3.0 - MIT
+  Copyright (c) 2024 Anthropic, PBC
+  https://github.com/modelcontextprotocol/python-sdk
+
+opentelemetry-api 1.45.1 - Apache-2.0
+  The OpenTelemetry Authors
+  https://github.com/open-telemetry/opentelemetry-python
+
+pycparser 3.0 - BSD-3-Clause
+  Copyright (c) 2008-2022, Eli Bendersky
+  https://github.com/eliben/pycparser
+
+pydantic 2.13.5 - MIT
+  Copyright (c) 2017 to present Pydantic Services Inc. and individual contributors
+  https://github.com/pydantic/pydantic
+
+pydantic-core 2.46.5 - MIT
+  Copyright (c) 2022 Samuel Colvin
+  https://github.com/pydantic/pydantic
+
+PyJWT 2.15.1 - MIT
+  Copyright (c) 2015-2022 Jose Padilla
+  https://github.com/jpadilla/pyjwt
+
+python-multipart 0.0.32 - Apache-2.0
+  The python-multipart contributors
+  https://github.com/Kludex/python-multipart
+
+referencing 0.37.0 - MIT
+  Copyright (c) 2022 Julian Berman
+  https://github.com/python-jsonschema/referencing
+
+rpds-py 2026.9.1 - MIT
+  Copyright (c) 2023 Julian Berman
+  https://github.com/crate-py/rpds
+
+sse-starlette 3.5.0 - BSD-3-Clause
+  Copyright (c) 2020, sysid
+  https://github.com/sysid/sse-starlette
+
+starlette 1.7.0 - BSD-3-Clause
+  Copyright (c) 2018, Encode OSS Ltd
+  https://github.com/Kludex/starlette
+
+truststore 0.10.4 - MIT
+  Copyright (c) 2022 Seth Michael Larson
+  https://github.com/sethmlarson/truststore
+
+typing-extensions 4.16.0 - PSF-2.0
+  Copyright (c) Python Software Foundation and contributors
+  https://github.com/python/typing_extensions
+
+typing-inspection 0.4.4 - MIT
+  Copyright (c) Pydantic Services Inc. 2025 to present
+  https://github.com/pydantic/typing-inspection
+
+uvicorn 0.54.0 - BSD-3-Clause
+  Copyright (c) 2017-present, Encode OSS Ltd
+  https://github.com/Kludex/uvicorn
+
+
+Runtime dependency on Windows only
+----------------------------------
+
+pywin32 311 - PSF-2.0
+  Copyright (c) Mark Hammond and contributors
+  https://github.com/mhammond/pywin32
+
+
+Used only to run the tests (requirements-dev.txt)
+-------------------------------------------------
+
+iniconfig 2.3.1 - MIT
+  Copyright (c) 2010 - 2023 Holger Krekel and others
+  https://github.com/pytest-dev/iniconfig
+
+packaging 26.3 - Apache-2.0 OR BSD-2-Clause
+  Copyright (c) Donald Stufft and individual contributors
+  https://github.com/pypa/packaging
+
+pluggy 1.7.0 - MIT
+  Copyright (c) 2015 Holger Krekel
+  https://github.com/pytest-dev/pluggy
+
+Pygments 2.21.0 - BSD-2-Clause
+  Copyright (c) 2006-2022 by the respective authors
+  https://github.com/pygments/pygments
+
+pytest 9.1.1 - MIT
+  Copyright (c) 2004 Holger Krekel and others
+  https://github.com/pytest-dev/pytest
+
+
+Base of the Docker image (Dockerfile)
+-------------------------------------
+
+python:3.12.15-slim - Python (PSF-2.0) on Debian
+  The official Python image for Docker, downloaded when the image is built. It includes
+  Debian packages under their own licenses, which are listed inside the image in
+  /usr/share/doc/*/copyright.
+  https://hub.docker.com/_/python

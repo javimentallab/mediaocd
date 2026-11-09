@@ -1,0 +1,37 @@
+# Data + state should never be committed
+data.db*
+backups/
+*.uploaded
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+*.log
+
+# Installed to run the tests
+node_modules/
+
+# Secrets (just in case someone drops them here)
+.env
+.env.*
+!.env.example
+secrets.json
+client_secret*.json
+
+# Local docker-compose overrides — the user's real compose file lives outside this dir
+docker-compose.local.yml
+docker-compose.override.yml
+
+# What the install steps of the README leave in this folder: the compose file can hold
+# secrets, and the data folders hold the database, API keys and images
+/docker-compose.yml
+/mediaocd-data/
+/mediaocd-assets/
+
+# Personal project journal — kept locally, not for public consumption
+TASKS.md

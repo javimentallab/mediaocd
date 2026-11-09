@@ -1,0 +1,120 @@
+name: trivy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly Monday 04:00 UTC — catches new advisories against an unchanged
+    # image. Pinned to off-peak so it doesn't compete with manual triggers.
+    - cron: '0 4 * * 1'
+  workflow_dispatch:
+
+# Two targets, because each one sees what the other can't:
+#   - the image: vulnerabilities in the Alpine packages and the installed npm
+#     tree, and secrets in the files that ship (app/build, app/public).
+#   - the repository: everything outside the image (contrib/mcp-server and its
+#     requirements.txt), plus the misconfiguration checks on both Dockerfiles.
+#
+# trivy-action is pinned to the commit behind v0.36.0: tags of this action were
+# hijacked in March 2026.
+jobs:
+  scan:
+    name: Trivy scan (image + repository)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Build mediaocd image (load locally only — no push)
+        # pipefail: without it `| tail` masks a failed build and the error
+        # only surfaces later as Trivy's "unable to find the specified image".
+        run: |
+          set -o pipefail
+          docker build \
+            --tag mediaocd:ci \
+            --progress=plain \
+            . 2>&1 | tail -80
+
+      - name: Trivy image — fail on HIGH/CRITICAL
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: mediaocd:ci
+          format: table
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+          ignore-unfixed: true
+          scanners: vuln,secret
+          vuln-type: 'os,library'
+          timeout: 10m
+
+      - name: Trivy repository — fail on HIGH/CRITICAL
+        # always(): a red image must not hide what the repository scan finds.
+        if: always()
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: table
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+          ignore-unfixed: true
+          scanners: vuln,secret,misconfig
+          timeout: 10m
+
+      - name: Trivy image — full report (informational, never fails)
+        if: always()
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: mediaocd:ci
+          format: table
+          severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+          exit-code: '0'
+          scanners: vuln,secret
+          vuln-type: 'os,library'
+          timeout: 10m
+
+      - name: SARIF of the image
+        if: always()
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: mediaocd:ci
+          format: sarif
+          output: trivy-image.sarif
+          severity: MEDIUM,HIGH,CRITICAL
+          # Without this the action drops `severity` and reports every level in SARIF.
+          limit-severities-for-sarif: 'true'
+          scanners: vuln,secret
+          vuln-type: 'os,library'
+
+      - name: SARIF of the repository
+        if: always()
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: sarif
+          output: trivy-repo.sarif
+          severity: MEDIUM,HIGH,CRITICAL
+          limit-severities-for-sarif: 'true'
+          scanners: vuln,secret,misconfig
+
+      - name: Push image SARIF to GitHub Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@4bfa242aa49c5f7c6770b98670d354a7dfac05f8 # v3
+        with:
+          sarif_file: trivy-image.sarif
+          category: trivy-image
+
+      - name: Push repository SARIF to GitHub Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@4bfa242aa49c5f7c6770b98670d354a7dfac05f8 # v3
+        with:
+          sarif_file: trivy-repo.sarif
+          category: trivy-fs
