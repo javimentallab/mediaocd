@@ -1596,11 +1596,16 @@ html:not(.dark) .hover\:text-red-700:hover{--tw-text-opacity:1!important;color:r
 .dark .dark\:hover\:bg-red-900:hover{--tw-bg-opacity:1!important;background-color:rgb(127 29 29 / var(--tw-bg-opacity))!important}
 .dark .dark\:hover\:bg-slate-600:hover{--tw-bg-opacity:1!important;background-color:rgb(71 85 105 / var(--tw-bg-opacity))!important}
 /* end mediaocd colour utilities */
-/* The "..." menu of each episode row. */
-.mt-ep-act{position:relative;display:flex;align-items:center;margin-left:.5rem}
-.mt-ep-act .mt-more-m{left:auto;right:0}
-@media (max-width:767px){
-.mt-ep-row{position:relative}
-.mt-ep-act{position:static}
-.mt-ep-act .mt-more-m{left:0;right:0;min-width:0;max-width:none}
-}
+/* Seen history steps of the green dialog: + N - right of the "completed" tile. */
+.mt-rp-st.has-steps{grid-template-columns:repeat(3,1fr) auto}
+.mt-rp-step{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.mt-rp-sb{display:inline-flex;align-items:center;justify-content:center;width:30px;height:28px;padding:0;border:1px solid var(--mt-line-hi);border-radius:8px;background:transparent;color:var(--mt-fg);cursor:pointer}
+.mt-rp-sb:hover{border-color:#22c55e;background:rgba(34,197,94,.16)}
+.mt-rp-sb:disabled{opacity:.4;cursor:default;border-color:var(--mt-line-hi);background:transparent}
+.mt-rp-sb .material-icons{font-size:20px;line-height:1}
+.mt-rp-n{min-width:1.6em;font-size:.9rem;font-weight:700;line-height:1;text-align:center}
+/* The date pop-up of the seen history. */
+.mt-when-custom{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px;padding:10px;border:1px solid var(--mt-line-hi);border-radius:10px}
+.mt-when-custom input{flex:1 1 120px;min-width:0;padding:5px 8px;border:1px solid var(--mt-line-hi);border-radius:8px;background:transparent;color:inherit;font-size:.9rem}
+.dark .mt-when-custom input{color-scheme:dark}
+.mt-when-custom button{flex:1 1 100%;padding:7px 12px;border-radius:8px;cursor:pointer}
