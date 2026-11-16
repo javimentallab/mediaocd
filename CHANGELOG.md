@@ -2,6 +2,11 @@
 
 Notable changes to MediaOCD. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.1.1] - 2026-11-16
+
+### Security
+- The MCP server uses opentelemetry-api 1.45.2, which fixes CVE-2026-126360: a malformed `traceparent` header could make its parsing take quadratic time.
+
 ## [1.1.0] - 2026-11-16
 
 ### Added

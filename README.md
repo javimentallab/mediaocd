@@ -75,7 +75,7 @@ To put it behind your own domain, see [`SETUP_DOMAIN.md`](SETUP_DOMAIN.md).
 
 ```sh
 git fetch --tags origin
-git checkout v1.1.0                 # the tag of the new release
+git checkout v1.1.1                 # the tag of the new release
 docker compose build mediaocd
 docker compose up -d mediaocd
 ```
