@@ -1,5 +1,5 @@
 // MediaOCD service worker — generated at build time
-const VERSION = "main_8e20e568_c868dd639830.js-439fb6c14dc9";
+const VERSION = "main_8e20e568_c868dd639830.js-0377fb0290ce";
 const STATIC_CACHE = 'mt-static-' + VERSION;
 const RUNTIME_CACHE = 'mt-runtime-' + VERSION;
 const IMAGE_CACHE = 'mt-images-' + VERSION;

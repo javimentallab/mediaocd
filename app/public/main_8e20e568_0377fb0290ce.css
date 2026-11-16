@@ -1488,7 +1488,7 @@ body .mt-secs .items-grid{justify-content:center!important}
 .dark .mt-rp-tile.is-on,.dark .mt-rp-tile.is-on:hover{color:#4ade80}
 .mt-rp-date{margin-top:6px;color:var(--mt-dim);cursor:pointer;font-size:.8rem;text-align:right;text-decoration:underline}
 .mt-rp-form{margin-top:12px}
-.mt-rp-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px;font-size:.9rem}
+.mt-rp-row{display:flex;align-items:baseline;justify-content:center;gap:8px;font-size:.9rem}
 .mt-rp-range{display:flex;align-items:center;gap:10px;margin-top:6px}
 .mt-rp-range input{flex:1 1 auto;min-width:0;accent-color:#22c55e}
 .mt-rp-range span{flex:none;width:3em;font-size:.9rem;text-align:right}
