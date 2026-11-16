@@ -2,6 +2,20 @@
 
 Notable changes to MediaOCD. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] - 2026-11-16
+
+### Added
+- The status dialog of an item or an episode has a + and a − beside its completed tile, with the number of times it was completed in between. + adds one more entry to the seen history, with the date you choose; − deletes the latest entry, and with only one left it does the same as "Remove completed".
+
+### Changed
+- The date pop-up of the seen history looks like the status dialog.
+- The episodes page keeps the actions of a season (add to a list, mark the season as seen or unseen, load durations from TMDB) in a "…" menu, like the details page. Each episode is handled from its green icon, so episode rows and the page of an episode no longer have buttons of their own.
+- "Progress:" and its time sit together, centred, in the status dialog.
+
+### Removed
+- The "Choose date" link under the tiles of the status dialog: its + does the same.
+- "Add episode to list" on the page of an episode.
+
 ## [1.0.0] - 2026-11-09
 
 First release, under the PolyForm Noncommercial License 1.0.0.
