@@ -6,6 +6,7 @@ Notable changes to MediaOCD. The format follows [Keep a Changelog](https://keepa
 
 ### Security
 - The MCP server uses opentelemetry-api 1.45.2, which fixes CVE-2026-126360: a malformed `traceparent` header could make its parsing take quadratic time.
+- fast-xml-parser 5.12.0, which fixes CVE-2026-126066 (low): an unterminated tag could make the Goodreads import take quadratic CPU time.
 
 ## [1.1.0] - 2026-11-16
 
