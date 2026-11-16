@@ -80,8 +80,18 @@ function _parseDetail(html) {
   m = html.match(/Producción<\/span>:\s*<span class="value">([^<]+)<\/span>/);
   if (m) out.production = _decodeEntities(m[1]).trim();
   m = html.match(/Ficha artística<\/span>:\s*<span class="value">([\s\S]*?)<\/span>/);
-  if (m) out.ficha = _decodeEntities(m[1].replace(/<[^>]+>/g, '')).trim();
+  if (m) out.ficha = _decodeEntities(_stripTags(m[1])).trim();
   return out;
+}
+
+function _stripTags(text) {
+  let out = text;
+  let before;
+  do {
+    before = out;
+    out = out.replace(/<[^>]*>/g, '');
+  } while (out !== before);
+  return out.replace(/</g, '');
 }
 
 function _extractFromFicha(ficha) {

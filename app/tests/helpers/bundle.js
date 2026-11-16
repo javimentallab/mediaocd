@@ -49,7 +49,7 @@ function historyLabels() {
   const block = source.slice(source.lastIndexOf('onClick:', first), first + 800);
   const labels = {};
   for (const [, predicate, label] of block.matchAll(/([\w$]+)\(\w+\)&&\w+\.createElement\([\w$]+,\{id:"(Add to [a-z]+ history)"\}\)/g)) {
-    const definition = source.match(new RegExp(`[,;\\s]${predicate.replace(/\$/g, '\\$')}=function\\(e\\)\\{return"string"==typeof e\\?"([a-z_]+)"===e`));
+    const definition = source.match(new RegExp(`[,;\\s]${predicate.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}=function\\(e\\)\\{return"string"==typeof e\\?"([a-z_]+)"===e`));
     assert.ok(definition, `the predicate of "${label}" says which media it is for`);
     labels[definition[1]] = label;
   }

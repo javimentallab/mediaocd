@@ -16,6 +16,9 @@ Notable changes to MediaOCD. The format follows [Keep a Changelog](https://keepa
 - The "Choose date" link under the tiles of the status dialog: its + does the same.
 - "Add episode to list" on the page of an episode.
 
+### Security
+- Tags in the cast of a play read from teatro.es are removed until none is left, so a nested tag cannot leave one behind (CodeQL alert 2). A test helper escapes every regular-expression character (CodeQL alert 1).
+
 ## [1.0.0] - 2026-11-09
 
 First release, under the PolyForm Noncommercial License 1.0.0.
